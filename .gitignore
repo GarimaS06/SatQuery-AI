@@ -58,6 +58,12 @@ outputs/*
 !outputs/README.md
 
 # =========================
+# Preprocessing (Person A)
+# =========================
+preprocessing/uploads/
+preprocessing/processed/
+
+# =========================
 # Logs
 # =========================
 *.log
