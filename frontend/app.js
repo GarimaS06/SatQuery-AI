@@ -69,7 +69,7 @@ const exportButton =
 
 
 /* =========================================
-   SIDEBAR ELEMENTS
+   SIDEBAR
    ========================================= */
 
 const newChatButton =
@@ -101,143 +101,130 @@ let currentChatId = null;
 
 
 /* =========================================
-   DATABASE
+   INDEXEDDB
    ========================================= */
 
 const DB_NAME = "SatQueryDB";
+
 const DB_VERSION = 1;
-const CHAT_STORE = "chats";
 
+const STORE_NAME = "chats";
 
-/* =========================================
-   OPEN DATABASE
-   ========================================= */
 
 function openDatabase() {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(
+        (resolve, reject) => {
 
-        const request =
-            indexedDB.open(
-                DB_NAME,
-                DB_VERSION
-            );
-
-
-        request.onupgradeneeded = (event) => {
-
-            const db =
-                event.target.result;
-
-
-            if (!db.objectStoreNames.contains(CHAT_STORE)) {
-
-                const store =
-                    db.createObjectStore(
-                        CHAT_STORE,
-                        {
-                            keyPath: "id"
-                        }
-                    );
-
-
-                store.createIndex(
-                    "updatedAt",
-                    "updatedAt"
+            const request =
+                indexedDB.open(
+                    DB_NAME,
+                    DB_VERSION
                 );
 
-            }
 
-        };
+            request.onupgradeneeded =
+                (event) => {
+
+                    const db =
+                        event.target.result;
+
+                    if (
+                        !db.objectStoreNames
+                            .contains(STORE_NAME)
+                    ) {
+
+                        const store =
+                            db.createObjectStore(
+                                STORE_NAME,
+                                {
+                                    keyPath: "id"
+                                }
+                            );
+
+                        store.createIndex(
+                            "timestamp",
+                            "timestamp"
+                        );
+
+                    }
+
+                };
 
 
-        request.onsuccess = () => {
+            request.onsuccess =
+                () => {
 
-            resolve(
-                request.result
-            );
+                    resolve(
+                        request.result
+                    );
 
-        };
+                };
 
 
-        request.onerror = () => {
+            request.onerror =
+                () => {
 
-            reject(
-                request.error
-            );
+                    reject(
+                        request.error
+                    );
 
-        };
+                };
 
-    });
+        }
+    );
 
 }
 
 
-let databasePromise =
-    openDatabase();
-
-
 /* =========================================
-   GET ONE CHAT
+   GET CHAT
    ========================================= */
 
 async function getChat(id) {
 
-    try {
+    const db =
+        await openDatabase();
 
-        const db =
-            await databasePromise;
+    return new Promise(
+        (resolve, reject) => {
+
+            const transaction =
+                db.transaction(
+                    STORE_NAME,
+                    "readonly"
+                );
+
+            const store =
+                transaction.objectStore(
+                    STORE_NAME
+                );
+
+            const request =
+                store.get(id);
 
 
-        return new Promise(
-            (resolve, reject) => {
+            request.onsuccess =
+                () => {
 
-                const transaction =
-                    db.transaction(
-                        CHAT_STORE,
-                        "readonly"
+                    resolve(
+                        request.result
                     );
 
-
-                const request =
-                    transaction
-                        .objectStore(CHAT_STORE)
-                        .get(id);
+                };
 
 
-                request.onsuccess =
-                    () => {
+            request.onerror =
+                () => {
 
-                        resolve(
-                            request.result || null
-                        );
+                    reject(
+                        request.error
+                    );
 
-                    };
+                };
 
-
-                request.onerror =
-                    () => {
-
-                        reject(
-                            request.error
-                        );
-
-                    };
-
-            }
-        );
-
-    }
-    catch (error) {
-
-        console.error(
-            "Error loading chat:",
-            error
-        );
-
-        return null;
-
-    }
+        }
+    );
 
 }
 
@@ -248,190 +235,150 @@ async function getChat(id) {
 
 async function getAllChats() {
 
-    try {
+    const db =
+        await openDatabase();
 
-        const db =
-            await databasePromise;
+    return new Promise(
+        (resolve, reject) => {
+
+            const transaction =
+                db.transaction(
+                    STORE_NAME,
+                    "readonly"
+                );
+
+            const store =
+                transaction.objectStore(
+                    STORE_NAME
+                );
+
+            const request =
+                store.getAll();
 
 
-        return new Promise(
-            (resolve, reject) => {
+            request.onsuccess =
+                () => {
 
-                const transaction =
-                    db.transaction(
-                        CHAT_STORE,
-                        "readonly"
+                    const chats =
+                        request.result || [];
+
+                    chats.sort(
+                        (a, b) =>
+                            new Date(b.timestamp) -
+                            new Date(a.timestamp)
                     );
 
+                    resolve(chats);
 
-                const request =
-                    transaction
-                        .objectStore(CHAT_STORE)
-                        .getAll();
+                };
 
 
-                request.onsuccess =
-                    () => {
+            request.onerror =
+                () => {
 
-                        const chats =
-                            request.result || [];
+                    reject(
+                        request.error
+                    );
 
+                };
 
-                        chats.sort(
-                            (a, b) =>
-                                b.updatedAt -
-                                a.updatedAt
-                        );
-
-
-                        resolve(
-                            chats
-                        );
-
-                    };
-
-
-                request.onerror =
-                    () => {
-
-                        reject(
-                            request.error
-                        );
-
-                    };
-
-            }
-        );
-
-    }
-    catch (error) {
-
-        console.error(
-            "Error loading chats:",
-            error
-        );
-
-        return [];
-
-    }
+        }
+    );
 
 }
 
 
 /* =========================================
-   SAVE CURRENT CHAT
+   SAVE CHAT
    ========================================= */
 
 async function saveChat() {
 
     if (!currentChatId) {
-
         return;
-
     }
 
 
-    try {
+    const chat = {
 
-        const db =
-            await databasePromise;
+        id:
+            currentChatId,
 
+        title:
+            getChatTitle(),
 
-        const existingChat =
-            await getChat(
-                currentChatId
-            );
+        timestamp:
+            new Date(),
 
+        messages:
+            questionHistory,
 
-        const chatData = {
+        images:
+            selectedFiles.map(
+                (file) => ({
+                    name:
+                        file.name,
 
-            id:
-                currentChatId,
+                    type:
+                        file.type,
 
-            title:
-                getChatTitle(),
+                    size:
+                        file.size,
 
-            createdAt:
-                existingChat?.createdAt ||
-                Date.now(),
+                    lastModified:
+                        file.lastModified,
 
-            updatedAt:
-                Date.now(),
+                    blob:
+                        file
+                })
+            )
 
-            messages:
-                questionHistory,
-
-            images:
-                selectedFiles.map(
-                    (file) => ({
-
-                        name:
-                            file.name,
-
-                        type:
-                            file.type,
-
-                        size:
-                            file.size,
-
-                        lastModified:
-                            file.lastModified,
-
-                        blob:
-                            file
-
-                    })
-                )
-
-        };
+    };
 
 
-        return new Promise(
-            (resolve, reject) => {
+    const db =
+        await openDatabase();
 
-                const transaction =
-                    db.transaction(
-                        CHAT_STORE,
-                        "readwrite"
+
+    return new Promise(
+        (resolve, reject) => {
+
+            const transaction =
+                db.transaction(
+                    STORE_NAME,
+                    "readwrite"
+                );
+
+            const store =
+                transaction.objectStore(
+                    STORE_NAME
+                );
+
+            const request =
+                store.put(chat);
+
+
+            request.onsuccess =
+                () => {
+
+                    resolve();
+
+                    renderChatList();
+
+                };
+
+
+            request.onerror =
+                () => {
+
+                    reject(
+                        request.error
                     );
 
+                };
 
-                transaction
-                    .objectStore(CHAT_STORE)
-                    .put(chatData);
-
-
-                transaction.oncomplete =
-                    async () => {
-
-                        await renderChatList();
-
-                        resolve();
-
-                    };
-
-
-                transaction.onerror =
-                    () => {
-
-                        reject(
-                            transaction.error
-                        );
-
-                    };
-
-            }
-        );
-
-    }
-    catch (error) {
-
-        console.error(
-            "Could not save chat:",
-            error
-        );
-
-    }
+        }
+    );
 
 }
 
@@ -442,56 +389,47 @@ async function saveChat() {
 
 async function deleteStoredChat(id) {
 
-    try {
-
-        const db =
-            await databasePromise;
+    const db =
+        await openDatabase();
 
 
-        return new Promise(
-            (resolve, reject) => {
+    return new Promise(
+        (resolve, reject) => {
 
-                const transaction =
-                    db.transaction(
-                        CHAT_STORE,
-                        "readwrite"
+            const transaction =
+                db.transaction(
+                    STORE_NAME,
+                    "readwrite"
+                );
+
+            const store =
+                transaction.objectStore(
+                    STORE_NAME
+                );
+
+            const request =
+                store.delete(id);
+
+
+            request.onsuccess =
+                () => {
+
+                    resolve();
+
+                };
+
+
+            request.onerror =
+                () => {
+
+                    reject(
+                        request.error
                     );
 
+                };
 
-                transaction
-                    .objectStore(CHAT_STORE)
-                    .delete(id);
-
-
-                transaction.oncomplete =
-                    () => {
-
-                        resolve();
-
-                    };
-
-
-                transaction.onerror =
-                    () => {
-
-                        reject(
-                            transaction.error
-                        );
-
-                    };
-
-            }
-        );
-
-    }
-    catch (error) {
-
-        console.error(
-            "Could not delete chat:",
-            error
-        );
-
-    }
+        }
+    );
 
 }
 
@@ -503,7 +441,9 @@ async function deleteStoredChat(id) {
 function createChatId() {
 
     return (
-        Date.now().toString(36) +
+        "chat-" +
+        Date.now() +
+        "-" +
         Math.random()
             .toString(36)
             .substring(2, 9)
@@ -519,157 +459,124 @@ function createChatId() {
 function getChatTitle() {
 
     if (
-        questionHistory.length > 0
+        questionHistory.length === 0
     ) {
 
-        return questionHistory[0].question;
+        return "New Chat";
 
     }
+
+
+    const firstQuestion =
+        questionHistory[0].question;
 
 
     if (
-        selectedFiles.length === 1
+        firstQuestion.length > 32
     ) {
 
-        return selectedFiles[0].name;
+        return (
+            firstQuestion.substring(
+                0,
+                32
+            ) +
+            "..."
+        );
 
     }
 
 
-    if (
-        selectedFiles.length > 1
-    ) {
-
-        return `${selectedFiles.length} Images`;
-
-    }
-
-
-    return "New Chat";
+    return firstQuestion;
 
 }
 
 
 /* =========================================
-   NEW CHAT
+   START NEW CHAT
    ========================================= */
 
-function startNewChat() {
+async function startNewChat() {
 
     currentChatId =
         createChatId();
 
+    selectedFiles = [];
 
-    selectedFiles =
-        [];
+    selectedAnalysis =
+        "NDVI";
 
-    questionHistory =
-        [];
+    questionHistory = [];
 
     analysisRunning =
         false;
 
 
     if (imageInput) {
+        imageInput.value = "";
+    }
 
-        imageInput.value =
+
+    if (imageGallery) {
+
+        imageGallery.innerHTML =
+            "";
+
+        imageGallery.className =
+            "image-gallery";
+
+    }
+
+
+    if (chatHistory) {
+        chatHistory.innerHTML =
+            "";
+    }
+
+
+    if (resultView) {
+
+        resultView.classList.remove(
+            "visible"
+        );
+
+    }
+
+
+    if (continueButton) {
+
+        continueButton.classList.remove(
+            "visible"
+        );
+
+    }
+
+
+    if (emptyState) {
+
+        emptyState.style.display =
+            "block";
+
+    }
+
+
+    if (queryInput) {
+
+        queryInput.value =
             "";
 
     }
 
 
-    imageGallery.innerHTML =
-        "";
+    updateImageSession();
 
-    imageGallery.className =
-        "image-gallery";
-
-
-    chatHistory.innerHTML =
-        "";
-
-
-    resultView.classList.remove(
-        "visible"
-    );
-
-
-    emptyState.style.display =
-        "block";
-
-
-    deleteButton.classList.remove(
-        "visible"
-    );
-
-
-    clearChatButton.classList.remove(
-        "visible"
-    );
-
-
-    continueButton.classList.remove(
-        "visible"
-    );
-
-
-    fileName.textContent =
-        "";
-
-
-    imageSession.textContent =
-        "No imagery loaded.";
-
-    imageSession.classList.remove(
-        "active"
-    );
-
-
-    resultStatus.textContent =
-        "READY";
-
-
-    selectedAnalysis =
-        "NDVI";
-
-
-    analysisOptions.forEach(
-        (option) => {
-
-            option.classList.remove(
-                "active"
-            );
-
-        }
-    );
-
-
-    const ndvi =
-        document.querySelector(
-            '[data-analysis="NDVI"]'
-        );
-
-
-    if (ndvi) {
-
-        ndvi.classList.add(
-            "active"
-        );
-
-    }
-
-
-    updateSidebarActiveState();
-
-
-    queryInput.value =
-        "";
-
-
-    queryInput.focus();
+    renderChatList();
 
 }
 
+
+/* =========================================
+   NEW CHAT BUTTON
+   ========================================= */
 
 if (newChatButton) {
 
@@ -728,9 +635,7 @@ if (imageInput) {
 
 
             /*
-               Create chat automatically
-               when user uploads to a
-               blank/new chat.
+               CREATE CHAT IF NEEDED
             */
 
             if (!currentChatId) {
@@ -742,33 +647,30 @@ if (imageInput) {
 
 
             /*
-               IMPORTANT:
-               APPEND new images.
-
-               Existing images are NOT
-               removed and existing
-               questions are NOT cleared.
+               ADD NEW FILES
             */
 
             files.forEach(
                 (file) => {
 
-                    const exists =
+                    const alreadyExists =
                         selectedFiles.some(
                             (existingFile) =>
 
                                 existingFile.name ===
-                                    file.name &&
+                                file.name &&
 
                                 existingFile.size ===
-                                    file.size &&
+                                file.size &&
 
                                 existingFile.lastModified ===
-                                    file.lastModified
+                                file.lastModified
                         );
 
 
-                    if (!exists) {
+                    if (
+                        !alreadyExists
+                    ) {
 
                         selectedFiles.push(
                             file
@@ -781,11 +683,7 @@ if (imageInput) {
 
 
             /*
-               Reset input.
-
-               This allows the user to
-               select the same file again
-               later if required.
+               RESET INPUT
             */
 
             imageInput.value =
@@ -793,7 +691,7 @@ if (imageInput) {
 
 
             /*
-               Update image display.
+               RENDER
             */
 
             renderImageGallery();
@@ -802,15 +700,7 @@ if (imageInput) {
 
 
             /*
-               IMPORTANT:
-
-               When the user uploads new
-               images after asking previous
-               questions, switch back to
-               the image view.
-
-               Previous questions remain
-               saved in questionHistory.
+               SHOW IMAGE VIEW
             */
 
             if (resultView) {
@@ -832,11 +722,12 @@ if (imageInput) {
 
 
             /*
-               Save everything.
+               IMPORTANT:
+               DO NOT CLEAR CHAT HISTORY.
 
-               This means the old questions
-               AND the newly uploaded images
-               stay inside the same chat.
+               Existing conversation stays
+               when additional images are
+               uploaded.
             */
 
             await saveChat();
@@ -854,9 +745,7 @@ if (imageInput) {
 function renderImageGallery() {
 
     if (!imageGallery) {
-
         return;
-
     }
 
 
@@ -889,7 +778,7 @@ function renderImageGallery() {
 
 
     /*
-       1 IMAGE
+       SELECT LAYOUT
     */
 
     if (
@@ -902,11 +791,6 @@ function renderImageGallery() {
 
     }
 
-
-    /*
-       2 IMAGES
-    */
-
     else if (
         selectedFiles.length === 2
     ) {
@@ -916,11 +800,6 @@ function renderImageGallery() {
         );
 
     }
-
-
-    /*
-       3 IMAGES
-    */
 
     else if (
         selectedFiles.length === 3
@@ -932,11 +811,6 @@ function renderImageGallery() {
 
     }
 
-
-    /*
-       4+ IMAGES
-    */
-
     else {
 
         imageGallery.classList.add(
@@ -947,7 +821,7 @@ function renderImageGallery() {
 
 
     /*
-       CREATE CARDS
+       CREATE IMAGE CARDS
     */
 
     selectedFiles.forEach(
@@ -957,7 +831,6 @@ function renderImageGallery() {
                 document.createElement(
                     "div"
                 );
-
 
             card.className =
                 "image-card";
@@ -972,33 +845,20 @@ function renderImageGallery() {
                     "img"
                 );
 
-
             const objectURL =
                 URL.createObjectURL(
                     file
                 );
 
-
             img.src =
                 objectURL;
-
 
             img.alt =
                 file.name;
 
 
-            img.onload =
-                () => {
-
-                    URL.revokeObjectURL(
-                        objectURL
-                    );
-
-                };
-
-
             /*
-               NUMBER
+               IMAGE NUMBER
             */
 
             const number =
@@ -1006,17 +866,15 @@ function renderImageGallery() {
                     "div"
                 );
 
-
             number.className =
                 "image-number";
-
 
             number.textContent =
                 `IMAGE ${index + 1}`;
 
 
             /*
-               REMOVE
+               REMOVE BUTTON
             */
 
             const removeButton =
@@ -1024,43 +882,41 @@ function renderImageGallery() {
                     "button"
                 );
 
-
             removeButton.className =
                 "remove-image";
 
-
             removeButton.type =
                 "button";
-
-
-            removeButton.textContent =
-                "×";
-
 
             removeButton.setAttribute(
                 "aria-label",
                 `Remove image ${index + 1}`
             );
 
+            removeButton.textContent =
+                "×";
+
+
+            /*
+               REMOVE ONLY THIS IMAGE
+            */
 
             removeButton.addEventListener(
                 "click",
-                async (event) => {
+                (event) => {
 
                     event.preventDefault();
 
                     event.stopPropagation();
 
-                    await removeImage(
-                        index
-                    );
+                    removeImage(index);
 
                 }
             );
 
 
             /*
-               BUILD
+               BUILD CARD
             */
 
             card.appendChild(
@@ -1114,21 +970,40 @@ async function removeImage(index) {
 
 
     /*
-       If no images remain,
-       close result view.
+       NO IMAGES LEFT
     */
 
     if (
         selectedFiles.length === 0
     ) {
 
-        resultView.classList.remove(
-            "visible"
-        );
+        questionHistory =
+            [];
 
-        continueButton.classList.remove(
-            "visible"
-        );
+        if (chatHistory) {
+
+            chatHistory.innerHTML =
+                "";
+
+        }
+
+
+        if (resultView) {
+
+            resultView.classList.remove(
+                "visible"
+            );
+
+        }
+
+
+        if (continueButton) {
+
+            continueButton.classList.remove(
+                "visible"
+            );
+
+        }
 
     }
 
@@ -1148,35 +1023,56 @@ function updateImageSession() {
         selectedFiles.length;
 
 
-    if (
-        count === 0
-    ) {
+    /*
+       NO IMAGES
+    */
 
-        fileName.textContent =
-            "";
+    if (count === 0) {
 
+        if (fileName) {
 
-        imageSession.textContent =
-            "No imagery loaded.";
+            fileName.textContent =
+                "";
 
-
-        imageSession.classList.remove(
-            "active"
-        );
+        }
 
 
-        deleteButton.classList.remove(
-            "visible"
-        );
+        if (imageSession) {
+
+            imageSession.textContent =
+                "No imagery loaded.";
+
+            imageSession.classList.remove(
+                "active"
+            );
+
+        }
 
 
-        clearChatButton.classList.remove(
-            "visible"
-        );
+        if (deleteButton) {
+
+            deleteButton.classList.remove(
+                "visible"
+            );
+
+        }
 
 
-        emptyState.style.display =
-            "block";
+        if (clearChatButton) {
+
+            clearChatButton.classList.remove(
+                "visible"
+            );
+
+        }
+
+
+        if (emptyState) {
+
+            emptyState.style.display =
+                "block";
+
+        }
 
 
         return;
@@ -1184,47 +1080,85 @@ function updateImageSession() {
     }
 
 
-    emptyState.style.display =
-        "none";
+    /*
+       IMAGES EXIST
+    */
 
+    if (emptyState) {
 
-    deleteButton.classList.add(
-        "visible"
-    );
-
-
-    clearChatButton.classList.add(
-        "visible"
-    );
-
-
-    if (
-        count === 1
-    ) {
-
-        fileName.textContent =
-            selectedFiles[0].name;
-
-
-        imageSession.textContent =
-            "1 image loaded — ready for questions.";
-
-    }
-    else {
-
-        fileName.textContent =
-            `${count} images selected`;
-
-
-        imageSession.textContent =
-            `${count} images loaded — ready for analysis.`;
+        emptyState.style.display =
+            "none";
 
     }
 
 
-    imageSession.classList.add(
-        "active"
-    );
+    if (deleteButton) {
+
+        deleteButton.classList.add(
+            "visible"
+        );
+
+    }
+
+
+    if (clearChatButton) {
+
+        clearChatButton.classList.add(
+            "visible"
+        );
+
+    }
+
+
+    /*
+       FILE NAME / COUNT
+    */
+
+    if (fileName) {
+
+        if (count === 1) {
+
+            fileName.textContent =
+                selectedFiles[0].name;
+
+        }
+
+        else {
+
+            fileName.textContent =
+                `${count} images selected`;
+
+        }
+
+    }
+
+
+    /*
+       SESSION STATUS
+    */
+
+    if (imageSession) {
+
+        if (count === 1) {
+
+            imageSession.textContent =
+                "1 image loaded — ready for questions.";
+
+        }
+
+        else {
+
+            imageSession.textContent =
+                `${count} images loaded — ready for analysis.`;
+
+        }
+
+
+        imageSession.classList.add(
+            "active"
+        );
+
+    }
 
 }
 
@@ -1242,33 +1176,60 @@ if (deleteButton) {
             selectedFiles =
                 [];
 
+            if (imageInput) {
 
-            imageInput.value =
-                "";
+                imageInput.value =
+                    "";
 
-
-            imageGallery.innerHTML =
-                "";
-
-            imageGallery.className =
-                "image-gallery";
+            }
 
 
-            resultView.classList.remove(
-                "visible"
-            );
+            if (imageGallery) {
 
+                imageGallery.innerHTML =
+                    "";
 
-            updateImageSession();
+                imageGallery.className =
+                    "image-gallery";
+
+            }
 
 
             /*
-               IMPORTANT:
-
-               This removes images only.
-
-               The conversation stays saved.
+               Keep current chat.
             */
+
+            if (resultView) {
+
+                resultView.classList.remove(
+                    "visible"
+                );
+
+            }
+
+
+            if (chatHistory) {
+
+                chatHistory.innerHTML =
+                    "";
+
+            }
+
+
+            questionHistory =
+                [];
+
+
+            if (continueButton) {
+
+                continueButton.classList.remove(
+                    "visible"
+                );
+
+            }
+
+
+            updateImageSession();
 
             await saveChat();
 
@@ -1323,7 +1284,11 @@ if (runButton) {
 
     runButton.addEventListener(
         "click",
-        runAnalysis
+        () => {
+
+            runAnalysis();
+
+        }
     );
 
 }
@@ -1362,12 +1327,18 @@ if (queryInput) {
 
 async function runAnalysis() {
 
+    /*
+       DON'T ALLOW DUPLICATE REQUEST
+    */
+
     if (analysisRunning) {
-
         return;
-
     }
 
+
+    /*
+       IMAGE REQUIRED
+    */
 
     if (
         selectedFiles.length === 0
@@ -1381,6 +1352,10 @@ async function runAnalysis() {
 
     }
 
+
+    /*
+       QUESTION REQUIRED
+    */
 
     const query =
         queryInput.value.trim();
@@ -1399,6 +1374,10 @@ async function runAnalysis() {
     }
 
 
+    /*
+       CREATE CHAT IF NEEDED
+    */
+
     if (!currentChatId) {
 
         currentChatId =
@@ -1407,18 +1386,21 @@ async function runAnalysis() {
     }
 
 
+    /*
+       START ANALYSIS
+    */
+
     analysisRunning =
         true;
 
 
     /*
-       Save this question.
+       IMPORTANT:
+       Save the actual images used
+       by THIS question.
     */
 
     const conversation = {
-
-        id:
-            createChatId(),
 
         question:
             query,
@@ -1429,8 +1411,11 @@ async function runAnalysis() {
         imageCount:
             selectedFiles.length,
 
+        files:
+            [...selectedFiles],
+
         timestamp:
-            Date.now(),
+            new Date(),
 
         answer:
             null
@@ -1444,38 +1429,74 @@ async function runAnalysis() {
 
 
     /*
-       UI
+       BUTTON STATE
     */
 
-    runButton.disabled =
-        true;
+    if (runButton) {
+
+        runButton.disabled =
+            true;
+
+    }
 
 
-    runButtonText.textContent =
-        "Analyzing...";
+    if (runButtonText) {
+
+        runButtonText.textContent =
+            "Analyzing...";
+
+    }
 
 
-    loadingCircle.classList.add(
-        "loading"
-    );
+    if (loadingCircle) {
 
+        loadingCircle.classList.add(
+            "loading"
+        );
 
-    imageGallery.classList.remove(
-        "visible"
-    );
-
-
-    resultView.classList.add(
-        "visible"
-    );
-
-
-    resultStatus.textContent =
-        "PROCESSING";
+    }
 
 
     /*
-       Question
+       HIDE LARGE IMAGE VIEW
+    */
+
+    if (imageGallery) {
+
+        imageGallery.classList.remove(
+            "visible"
+        );
+
+    }
+
+
+    /*
+       SHOW RESULT VIEW
+    */
+
+    if (resultView) {
+
+        resultView.classList.add(
+            "visible"
+        );
+
+    }
+
+
+    /*
+       STATUS
+    */
+
+    if (resultStatus) {
+
+        resultStatus.textContent =
+            "PROCESSING";
+
+    }
+
+
+    /*
+       ADD QUESTION
     */
 
     addQuestionMessage(
@@ -1484,7 +1505,7 @@ async function runAnalysis() {
 
 
     /*
-       Loading
+       LOADING MESSAGE
     */
 
     const loadingMessage =
@@ -1497,18 +1518,27 @@ async function runAnalysis() {
 
 
     /*
-       Save question immediately.
+       SAVE CHAT
     */
 
     await saveChat();
 
 
     /*
+       =====================================
        TEMPORARY API SIMULATION
+       =====================================
+
+       Replace this setTimeout with
+       your real API call later.
     */
 
     setTimeout(
         async () => {
+
+            /*
+               REMOVE LOADING
+            */
 
             if (loadingMessage) {
 
@@ -1518,13 +1548,22 @@ async function runAnalysis() {
 
 
             /*
-               Temporary response.
+               TEMPORARY ANSWER
             */
 
-            conversation.answer =
-                `Analysis completed for "${conversation.question}". ` +
-                `The real SatQuery API response will appear here.`;
+            const answerText =
+                getTemporaryAnswer(
+                    conversation
+                );
 
+
+            conversation.answer =
+                answerText;
+
+
+            /*
+               ADD ANSWER
+            */
 
             addAnswerMessage(
                 conversation
@@ -1532,49 +1571,109 @@ async function runAnalysis() {
 
 
             /*
-               Save answer.
+               COMPLETE
             */
 
-            await saveChat();
+            if (resultStatus) {
+
+                resultStatus.textContent =
+                    "COMPLETE";
+
+            }
 
 
-            resultStatus.textContent =
-                "COMPLETE";
+            if (runButton) {
+
+                runButton.disabled =
+                    false;
+
+            }
 
 
-            runButton.disabled =
-                false;
+            if (runButtonText) {
+
+                runButtonText.textContent =
+                    "Run Analysis";
+
+            }
 
 
-            runButtonText.textContent =
-                "Run Analysis";
+            if (loadingCircle) {
 
+                loadingCircle.classList.remove(
+                    "loading"
+                );
 
-            loadingCircle.classList.remove(
-                "loading"
-            );
+            }
 
 
             analysisRunning =
                 false;
 
 
-            continueButton.classList.add(
-                "visible"
-            );
+            /*
+               SAVE UPDATED ANSWER
+            */
 
+            await saveChat();
+
+
+            /*
+               ALLOW ANOTHER QUESTION
+            */
+
+            if (continueButton) {
+
+                continueButton.classList.add(
+                    "visible"
+                );
+
+            }
+
+
+            /*
+               CLEAR INPUT
+            */
 
             queryInput.value =
                 "";
 
 
+            /*
+               FOCUS
+            */
+
             queryInput.focus();
 
+
+            /*
+               SCROLL
+            */
 
             scrollChatToBottom();
 
         },
         1800
+    );
+
+}
+
+
+/* =========================================
+   TEMPORARY ANSWER
+   ========================================= */
+
+function getTemporaryAnswer(
+    data
+) {
+
+    return (
+        `Analysis completed for "${data.question}". ` +
+        `The ${data.analysis} workflow processed ` +
+        `${data.imageCount} image` +
+        `${data.imageCount > 1 ? "s" : ""}. ` +
+        `The real satellite-analysis API response ` +
+        `will appear here once connected.`
     );
 
 }
@@ -1598,11 +1697,112 @@ function addQuestionMessage(
         "chat-message user-message";
 
 
-    message.dataset.messageId =
-        data.id;
+    /*
+       IMAGE PREVIEW
+    */
+
+    const imagePreview =
+        document.createElement(
+            "div"
+        );
+
+    imagePreview.className =
+        "question-image-preview";
 
 
-    message.innerHTML = `
+    /*
+       ADD ALL IMAGES USED
+       FOR THIS QUESTION
+    */
+
+    if (
+        data.files &&
+        data.files.length > 0
+    ) {
+
+        data.files.forEach(
+            (file) => {
+
+                const wrapper =
+                    document.createElement(
+                        "div"
+                    );
+
+                wrapper.className =
+                    "question-image-wrapper";
+
+
+                const img =
+                    document.createElement(
+                        "img"
+                    );
+
+
+                const objectURL =
+                    URL.createObjectURL(
+                        file
+                    );
+
+
+                img.src =
+                    objectURL;
+
+
+                img.alt =
+                    file.name;
+
+
+                img.title =
+                    "Click to view image";
+
+
+                /*
+                   OPEN LARGE IMAGE
+                */
+
+                img.addEventListener(
+                    "click",
+                    () => {
+
+                        window.open(
+                            objectURL,
+                            "_blank"
+                        );
+
+                    }
+                );
+
+
+                wrapper.appendChild(
+                    img
+                );
+
+
+                imagePreview.appendChild(
+                    wrapper
+                );
+
+            }
+        );
+
+    }
+
+
+    /*
+       QUESTION CONTENT
+    */
+
+    const content =
+        document.createElement(
+            "div"
+        );
+
+
+    content.className =
+        "question-content";
+
+
+    content.innerHTML = `
 
         <div class="message-label">
             YOU
@@ -1614,12 +1814,25 @@ function addQuestionMessage(
 
         <div class="message-analysis">
             ${escapeHTML(data.analysis)}
-            ·
-            ${data.imageCount}
+            · ${data.imageCount}
             image${data.imageCount > 1 ? "s" : ""}
         </div>
 
     `;
+
+
+    /*
+       BUILD MESSAGE
+    */
+
+    message.appendChild(
+        imagePreview
+    );
+
+
+    message.appendChild(
+        content
+    );
 
 
     chatHistory.appendChild(
@@ -1633,7 +1846,7 @@ function addQuestionMessage(
 
 
 /* =========================================
-   ADD LOADING MESSAGE
+   LOADING MESSAGE
    ========================================= */
 
 function addLoadingMessage(
@@ -1698,10 +1911,6 @@ function addAnswerMessage(
         "chat-message ai-message";
 
 
-    message.dataset.messageId =
-        data.id;
-
-
     message.innerHTML = `
 
         <div class="message-label">
@@ -1716,7 +1925,7 @@ function addAnswerMessage(
         <p>
             ${escapeHTML(
                 data.answer ||
-                "Analysis result will appear here."
+                getTemporaryAnswer(data)
             )}
         </p>
 
@@ -1729,456 +1938,6 @@ function addAnswerMessage(
 
 
     return message;
-
-}
-
-
-/* =========================================
-   OPEN OLD CHAT
-   ========================================= */
-
-async function openChat(
-    chat
-) {
-
-    if (!chat) {
-
-        return;
-
-    }
-
-
-    currentChatId =
-        chat.id;
-
-
-    questionHistory =
-        chat.messages || [];
-
-
-    selectedFiles =
-        (chat.images || []).map(
-            (image) => {
-
-                return new File(
-                    [image.blob],
-                    image.name,
-                    {
-                        type:
-                            image.type,
-
-                        lastModified:
-                            image.lastModified
-                    }
-                );
-
-            }
-        );
-
-
-    /*
-       Rebuild images.
-    */
-
-    renderImageGallery();
-
-    updateImageSession();
-
-
-    /*
-       Rebuild chat.
-    */
-
-    chatHistory.innerHTML =
-        "";
-
-
-    questionHistory.forEach(
-        (conversation) => {
-
-            addQuestionMessage(
-                conversation
-            );
-
-
-            if (
-                conversation.answer
-            ) {
-
-                addAnswerMessage(
-                    conversation
-                );
-
-            }
-
-        }
-    );
-
-
-    /*
-       Existing conversation
-       opens directly in chat mode.
-    */
-
-    if (
-        questionHistory.length > 0
-    ) {
-
-        imageGallery.classList.remove(
-            "visible"
-        );
-
-
-        resultView.classList.add(
-            "visible"
-        );
-
-
-        continueButton.classList.add(
-            "visible"
-        );
-
-
-        resultStatus.textContent =
-            "SAVED";
-
-    }
-
-
-    /*
-       Image-only chat.
-    */
-
-    else if (
-        selectedFiles.length > 0
-    ) {
-
-        resultView.classList.remove(
-            "visible"
-        );
-
-
-        imageGallery.classList.add(
-            "visible"
-        );
-
-    }
-
-
-    /*
-       Empty chat.
-    */
-
-    else {
-
-        resultView.classList.remove(
-            "visible"
-        );
-
-    }
-
-
-    updateSidebarActiveState();
-
-
-    queryInput.value =
-        "";
-
-
-    queryInput.focus();
-
-
-    scrollChatToBottom();
-
-}
-
-
-/* =========================================
-   RENDER SIDEBAR
-   ========================================= */
-
-async function renderChatList() {
-
-    if (!chatList) {
-
-        return;
-
-    }
-
-
-    let chats =
-        await getAllChats();
-
-
-    const search =
-        chatSearch
-            ? chatSearch.value
-                .trim()
-                .toLowerCase()
-            : "";
-
-
-    if (search) {
-
-        chats =
-            chats.filter(
-                (chat) =>
-                    chat.title
-                        .toLowerCase()
-                        .includes(search)
-            );
-
-    }
-
-
-    chatList.innerHTML =
-        "";
-
-
-    if (
-        chats.length === 0
-    ) {
-
-        const empty =
-            document.createElement(
-                "div"
-            );
-
-
-        empty.className =
-            "chat-list-empty";
-
-
-        empty.textContent =
-            search
-                ? "No chats found"
-                : "No previous chats";
-
-
-        chatList.appendChild(
-            empty
-        );
-
-
-        if (chatCount) {
-
-            chatCount.textContent =
-                "0 chats";
-
-        }
-
-
-        return;
-
-    }
-
-
-    chats.forEach(
-        (chat) => {
-
-            const item =
-                document.createElement(
-                    "div"
-                );
-
-
-            item.className =
-                "chat-item";
-
-
-            if (
-                chat.id ===
-                currentChatId
-            ) {
-
-                item.classList.add(
-                    "active"
-                );
-
-            }
-
-
-            const content =
-                document.createElement(
-                    "div"
-                );
-
-
-            content.className =
-                "chat-item-content";
-
-
-            const title =
-                document.createElement(
-                    "div"
-                );
-
-
-            title.className =
-                "chat-item-title";
-
-
-            title.textContent =
-                chat.title;
-
-
-            const meta =
-                document.createElement(
-                    "div"
-                );
-
-
-            meta.className =
-                "chat-item-meta";
-
-
-            meta.textContent =
-                `${chat.messages.length} message${
-                    chat.messages.length !== 1
-                        ? "s"
-                        : ""
-                }`;
-
-
-            content.appendChild(
-                title
-            );
-
-            content.appendChild(
-                meta
-            );
-
-
-            const deleteChatButton =
-                document.createElement(
-                    "button"
-                );
-
-
-            deleteChatButton.className =
-                "chat-delete-button";
-
-
-            deleteChatButton.type =
-                "button";
-
-
-            deleteChatButton.textContent =
-                "×";
-
-
-            deleteChatButton.title =
-                "Delete chat";
-
-
-            deleteChatButton.addEventListener(
-                "click",
-                async (event) => {
-
-                    event.preventDefault();
-
-                    event.stopPropagation();
-
-
-                    const confirmed =
-                        confirm(
-                            "Delete this chat?"
-                        );
-
-
-                    if (!confirmed) {
-
-                        return;
-
-                    }
-
-
-                    await deleteStoredChat(
-                        chat.id
-                    );
-
-
-                    if (
-                        chat.id ===
-                        currentChatId
-                    ) {
-
-                        startNewChat();
-
-                    }
-
-
-                    await renderChatList();
-
-                }
-            );
-
-
-            item.addEventListener(
-                "click",
-                async () => {
-
-                    await openChat(
-                        chat
-                    );
-
-                }
-            );
-
-
-            item.appendChild(
-                content
-            );
-
-
-            item.appendChild(
-                deleteChatButton
-            );
-
-
-            chatList.appendChild(
-                item
-            );
-
-        }
-    );
-
-
-    if (chatCount) {
-
-        chatCount.textContent =
-            `${chats.length} chat${
-                chats.length !== 1
-                    ? "s"
-                    : ""
-            }`;
-
-    }
-
-}
-
-
-/* =========================================
-   UPDATE SIDEBAR
-   ========================================= */
-
-async function updateSidebarActiveState() {
-
-    await renderChatList();
-
-}
-
-
-/* =========================================
-   SEARCH
-   ========================================= */
-
-if (chatSearch) {
-
-    chatSearch.addEventListener(
-        "input",
-        renderChatList
-    );
 
 }
 
@@ -2223,25 +1982,37 @@ function askAnotherQuestion() {
 
 
     /*
-       Keep all existing images.
+       KEEP IMAGES
     */
 
-    resultView.classList.add(
-        "visible"
-    );
+    if (resultView) {
+
+        resultView.classList.add(
+            "visible"
+        );
+
+    }
 
 
-    imageGallery.classList.remove(
-        "visible"
-    );
+    if (imageGallery) {
+
+        imageGallery.classList.remove(
+            "visible"
+        );
+
+    }
 
 
-    imageSession.textContent =
-        `${selectedFiles.length} image${
-            selectedFiles.length > 1
-                ? "s"
-                : ""
-        } retained — ask another question.`;
+    if (imageSession) {
+
+        imageSession.textContent =
+            `${selectedFiles.length} image${
+                selectedFiles.length > 1
+                    ? "s"
+                    : ""
+            } retained — ask another question.`;
+
+    }
 
 
     queryInput.focus();
@@ -2276,7 +2047,7 @@ if (clearChatResultButton) {
 async function clearConversation() {
 
     if (
-        !currentChatId
+        selectedFiles.length === 0
     ) {
 
         return;
@@ -2284,49 +2055,55 @@ async function clearConversation() {
     }
 
 
-    const confirmed =
-        confirm(
-            "Clear this conversation? Your images will remain."
-        );
-
-
-    if (!confirmed) {
-
-        return;
-
-    }
-
-
     /*
-       Keep images.
+       KEEP IMAGES
     */
 
     questionHistory =
         [];
 
 
+    /*
+       REMOVE OLD MESSAGES
+    */
+
     chatHistory.innerHTML =
         "";
 
 
+    /*
+       RESET STATUS
+    */
+
     resultStatus.textContent =
         "READY";
 
+
+    /*
+       KEEP RESULT VIEW
+    */
 
     resultView.classList.add(
         "visible"
     );
 
 
-    imageGallery.classList.remove(
-        "visible"
-    );
+    /*
+       HIDE GALLERY
+    */
+
+    if (imageGallery) {
+
+        imageGallery.classList.remove(
+            "visible"
+        );
+
+    }
 
 
-    continueButton.classList.remove(
-        "visible"
-    );
-
+    /*
+       UPDATE SESSION
+    */
 
     imageSession.textContent =
         `${selectedFiles.length} image${
@@ -2335,6 +2112,10 @@ async function clearConversation() {
                 : ""
         } retained — new conversation ready.`;
 
+
+    /*
+       NEW CONVERSATION MESSAGE
+    */
 
     const newChat =
         document.createElement(
@@ -2369,11 +2150,12 @@ async function clearConversation() {
     );
 
 
+    /*
+       CLEAR INPUT
+    */
+
     queryInput.value =
         "";
-
-
-    await saveChat();
 
 
     queryInput.focus();
@@ -2381,11 +2163,14 @@ async function clearConversation() {
 
     scrollChatToBottom();
 
+
+    await saveChat();
+
 }
 
 
 /* =========================================
-   SCROLL
+   SCROLL CHAT
    ========================================= */
 
 function scrollChatToBottom() {
@@ -2436,6 +2221,475 @@ function escapeHTML(text) {
 
 
 /* =========================================
+   SIDEBAR — RENDER CHAT LIST
+   ========================================= */
+
+async function renderChatList() {
+
+    if (!chatList) {
+        return;
+    }
+
+
+    const chats =
+        await getAllChats();
+
+
+    /*
+       CLEAR LIST
+    */
+
+    chatList.innerHTML =
+        "";
+
+
+    const searchTerm =
+        chatSearch
+            ? chatSearch.value
+                .trim()
+                .toLowerCase()
+            : "";
+
+
+    const filteredChats =
+        chats.filter(
+            (chat) => {
+
+                if (!searchTerm) {
+                    return true;
+                }
+
+
+                return (
+                    chat.title &&
+                    chat.title
+                        .toLowerCase()
+                        .includes(
+                            searchTerm
+                        )
+                );
+
+            }
+        );
+
+
+    /*
+       EMPTY
+    */
+
+    if (
+        filteredChats.length === 0
+    ) {
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+        empty.className =
+            "chat-list-empty";
+
+
+        empty.textContent =
+            searchTerm
+                ? "No chats found"
+                : "No previous chats";
+
+
+        chatList.appendChild(
+            empty
+        );
+
+    }
+
+
+    /*
+       CHAT ITEMS
+    */
+
+    filteredChats.forEach(
+        (chat) => {
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+            item.className =
+                "chat-item";
+
+
+            if (
+                chat.id ===
+                currentChatId
+            ) {
+
+                item.classList.add(
+                    "active"
+                );
+
+            }
+
+
+            /*
+               CHAT CONTENT
+            */
+
+            const content =
+                document.createElement(
+                    "div"
+                );
+
+            content.className =
+                "chat-item-content";
+
+
+            const title =
+                document.createElement(
+                    "div"
+                );
+
+            title.className =
+                "chat-item-title";
+
+            title.textContent =
+                chat.title ||
+                "New Chat";
+
+
+            const meta =
+                document.createElement(
+                    "div"
+                );
+
+            meta.className =
+                "chat-item-meta";
+
+
+            const messageCount =
+                chat.messages
+                    ? chat.messages.length
+                    : 0;
+
+
+            meta.textContent =
+                `${messageCount} ${
+                    messageCount === 1
+                        ? "message"
+                        : "messages"
+                }`;
+
+
+            content.appendChild(
+                title
+            );
+
+            content.appendChild(
+                meta
+            );
+
+
+            /*
+               DELETE BUTTON
+            */
+
+            const deleteChatButton =
+                document.createElement(
+                    "button"
+                );
+
+            deleteChatButton.className =
+                "chat-delete";
+
+            deleteChatButton.type =
+                "button";
+
+            deleteChatButton.textContent =
+                "×";
+
+            deleteChatButton.title =
+                "Delete chat";
+
+
+            deleteChatButton.addEventListener(
+                "click",
+                async (event) => {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+
+                    const confirmed =
+                        confirm(
+                            "Delete this chat?"
+                        );
+
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+
+                    await deleteStoredChat(
+                        chat.id
+                    );
+
+
+                    if (
+                        chat.id ===
+                        currentChatId
+                    ) {
+
+                        await startNewChat();
+
+                    }
+
+
+                    renderChatList();
+
+                }
+            );
+
+
+            /*
+               OPEN CHAT
+            */
+
+            item.addEventListener(
+                "click",
+                () => {
+
+                    openChat(chat);
+
+                }
+            );
+
+
+            item.appendChild(
+                content
+            );
+
+            item.appendChild(
+                deleteChatButton
+            );
+
+
+            chatList.appendChild(
+                item
+            );
+
+        }
+    );
+
+
+    /*
+       CHAT COUNT
+    */
+
+    if (chatCount) {
+
+        chatCount.textContent =
+            `${chats.length} ${
+                chats.length === 1
+                    ? "chat"
+                    : "chats"
+            }`;
+
+    }
+
+}
+
+
+/* =========================================
+   OPEN CHAT
+   ========================================= */
+
+async function openChat(
+    chat
+) {
+
+    currentChatId =
+        chat.id;
+
+
+    /*
+       RESTORE IMAGES
+    */
+
+    selectedFiles =
+        [];
+
+
+    if (
+        chat.images &&
+        chat.images.length > 0
+    ) {
+
+        selectedFiles =
+            chat.images.map(
+                (image) => {
+
+                    return new File(
+                        [image.blob],
+                        image.name,
+                        {
+                            type:
+                                image.type,
+
+                            lastModified:
+                                image.lastModified
+                        }
+                    );
+
+                }
+            );
+
+    }
+
+
+    /*
+       RESTORE QUESTIONS
+    */
+
+    questionHistory =
+        chat.messages || [];
+
+
+    /*
+       UPDATE UI
+    */
+
+    updateImageSession();
+
+    renderImageGallery();
+
+
+    if (chatHistory) {
+
+        chatHistory.innerHTML =
+            "";
+
+    }
+
+
+    /*
+       REBUILD CHAT
+    */
+
+    questionHistory.forEach(
+        (message) => {
+
+            /*
+               Old chats may not have
+               files saved in the message.
+
+               In that case use the
+               stored chat images.
+            */
+
+            const restoredMessage = {
+
+                ...message,
+
+                files:
+                    message.files &&
+                    message.files.length > 0
+
+                        ? message.files
+
+                        : selectedFiles
+
+            };
+
+
+            addQuestionMessage(
+                restoredMessage
+            );
+
+
+            if (
+                message.answer
+            ) {
+
+                addAnswerMessage(
+                    restoredMessage
+                );
+
+            }
+
+        }
+    );
+
+
+    /*
+       SHOW RESULT IF MESSAGES EXIST
+    */
+
+    if (
+        questionHistory.length > 0
+    ) {
+
+        resultView.classList.add(
+            "visible"
+        );
+
+
+        imageGallery.classList.remove(
+            "visible"
+        );
+
+
+        resultStatus.textContent =
+            "COMPLETE";
+
+
+        if (continueButton) {
+
+            continueButton.classList.add(
+                "visible"
+            );
+
+        }
+
+
+        scrollChatToBottom();
+
+    }
+
+    else {
+
+        resultView.classList.remove(
+            "visible"
+        );
+
+    }
+
+
+    renderChatList();
+
+}
+
+
+/* =========================================
+   CHAT SEARCH
+   ========================================= */
+
+if (chatSearch) {
+
+    chatSearch.addEventListener(
+        "input",
+        () => {
+
+            renderChatList();
+
+        }
+    );
+
+}
+
+
+/* =========================================
    EXPORT
    ========================================= */
 
@@ -2475,26 +2729,52 @@ if (exportButton) {
    INITIALIZE
    ========================================= */
 
-(async function initialize() {
+async function initializeApp() {
 
     try {
 
-        await databasePromise;
+        await openDatabase();
 
-        await renderChatList();
+        const chats =
+            await getAllChats();
 
 
-        currentChatId =
-            null;
+        /*
+           If previous chats exist,
+           don't automatically open one.
+        */
+
+        if (
+            chats.length === 0
+        ) {
+
+            currentChatId =
+                createChatId();
+
+        }
+
+
+        renderChatList();
+
+        updateImageSession();
 
     }
+
     catch (error) {
 
         console.error(
-            "SatQuery initialization failed:",
+            "SatQuery database error:",
             error
         );
 
+        currentChatId =
+            createChatId();
+
+        updateImageSession();
+
     }
 
-})();
+}
+
+
+initializeApp();
