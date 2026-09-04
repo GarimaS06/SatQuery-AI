@@ -1,7 +1,7 @@
 /**
  * runTests.js — Automated test script for the Preprocessing Service
  *
- * This script tests all 13 cases from the requirements:
+ * This script tests all 14 cases from the requirements:
  *   1.  Health check
  *   2.  Valid JPEG upload
  *   3.  Valid PNG upload
@@ -15,6 +15,7 @@
  *   11. File larger than 25 MB
  *   12. Large-dimension image that needs resizing
  *   13. Small image that should NOT be enlarged
+ *   14. Valid upload with image + image2 (change detection pair)
  *
  * USAGE:
  *   1. Start the server in one terminal:  npm start
@@ -384,6 +385,33 @@ async function runAllTests() {
     assert(data.processedImage.wasResized === false, 'Small image should NOT be resized');
     assert(data.processedImage.width === 200, `Width should be 200, got ${data.processedImage.width}`);
     assert(data.processedImage.height === 150, `Height should be 150, got ${data.processedImage.height}`);
+  });
+
+  // ------ Test 14: Valid Upload with image + image2 (Change Detection Pair) ------
+  await runTest('14. Valid upload with image + image2 (change detection pair)', async () => {
+    // Create two test images of different sizes to confirm they are processed independently
+    const img1Path = await createTestImage('test_cd_before.jpg', 600, 400, 'jpeg');
+    const img2Path = await createTestImage('test_cd_after.png', 800, 600, 'png');
+    const { status, data } = await postPreprocess({
+      image: img1Path,
+      image2: img2Path,
+      question: 'What changed between these two images?',
+    });
+    assert(status === 200, `Expected status 200, got ${status}`);
+    assert(data.valid === true, `Expected valid=true`);
+    // Main image should be preprocessed
+    assert(data.processedImage, 'processedImage should exist');
+    assert(data.processedImage.format === 'png', `Expected main image format "png", got "${data.processedImage.format}"`);
+    // Second image should also be preprocessed
+    assert(data.processedImage2, 'processedImage2 should exist when image2 is uploaded');
+    assert(data.processedImage2.format === 'png', `Expected second image format "png", got "${data.processedImage2.format}"`);
+    // Original image info for both should be present
+    assert(data.originalImage, 'originalImage should exist');
+    assert(data.originalImage2, 'originalImage2 should exist');
+    assert(data.originalImage2.format === 'png', `Expected originalImage2 format "png", got "${data.originalImage2.format}"`);
+    // Router stub should confirm image2 was passed through
+    assert(data.router.forwarded === false, 'Router should still be stubbed');
+    assert(data.router.image2Included === true, 'Router stub should report image2Included=true');
   });
 
   // ============================================================
