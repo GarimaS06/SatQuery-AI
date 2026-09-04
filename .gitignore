@@ -67,3 +67,11 @@ preprocessing/processed/
 # Logs
 # =========================
 *.log
+# Local ChangeFormer repository
+ChangeFormer/
+
+# Large pretrained ChangeFormer checkpoints
+checkpoints/ChangeFormer_LEVIR/
+
+# Generated analysis outputs
+outputs/
