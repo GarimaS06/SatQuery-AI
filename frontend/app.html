@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        SatQuery AI
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="app.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================================
+         NAVBAR
+         ========================================= -->
+
+    <header class="app-navbar">
+
+        <a
+            href="./project.html"
+            class="app-logo"
+        >
+            SatQuery
+        </a>
+
+
+        <nav class="app-nav">
+
+            <a
+                href="./project.html"
+            >
+                Projects
+            </a>
+
+            <a
+                href="#"
+                id="exportButton"
+            >
+                Export
+            </a>
+
+        </nav>
+
+    </header>
+
+
+
+    <!-- =========================================
+         MAIN APPLICATION
+         ========================================= -->
+
+    <main class="app-main">
+
+
+        <!-- =====================================
+             CHAT SIDEBAR
+             ===================================== -->
+
+        <aside class="chat-sidebar">
+
+
+            <!-- SIDEBAR HEADER -->
+
+            <div class="sidebar-header">
+
+                <div class="sidebar-title">
+                    CHATS
+                </div>
+
+
+                <button
+                    type="button"
+                    class="new-chat-button"
+                    id="newChatButton"
+                    title="New chat"
+                >
+                    +
+                </button>
+
+            </div>
+
+
+
+            <!-- SEARCH -->
+
+            <div class="chat-search">
+
+                <input
+                    type="text"
+                    id="chatSearch"
+                    placeholder="Search chats..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+
+            <!-- CHAT LIST -->
+
+            <div
+                class="chat-list"
+                id="chatList"
+            >
+
+                <div
+                    class="chat-list-empty"
+                    id="chatListEmpty"
+                >
+                    No previous chats
+                </div>
+
+            </div>
+
+
+
+            <!-- SIDEBAR FOOTER -->
+
+            <div class="sidebar-footer">
+
+                <span id="chatCount">
+                    0 chats
+                </span>
+
+            </div>
+
+        </aside>
+
+
+
+        <!-- =====================================
+             CONTROL PANEL
+             ===================================== -->
+
+        <section class="control-panel">
+
+
+            <div class="control-content">
+
+
+                <!-- LABEL -->
+
+                <div class="section-label">
+
+                    SATELLITE ANALYSIS
+
+                </div>
+
+
+
+                <!-- HEADING -->
+
+                <h1>
+
+                    Ask your<br>
+                    imagery.
+
+                </h1>
+
+
+
+                <!-- DESCRIPTION -->
+
+                <p class="description">
+
+                    Upload satellite imagery and
+                    ask natural-language questions
+                    about what you see.
+
+                </p>
+
+
+
+                <!-- =================================
+                     IMAGE INPUT
+                     ================================= -->
+
+                <input
+                    type="file"
+                    id="imageInput"
+                    accept="image/*"
+                    multiple
+                    hidden
+                >
+
+
+
+                <!-- UPLOAD -->
+
+                <button
+                    type="button"
+                    class="upload-button"
+                    id="uploadButton"
+                >
+
+                    Upload Imagery
+
+                </button>
+
+
+
+                <!-- DELETE ALL -->
+
+                <button
+                    type="button"
+                    class="delete-button"
+                    id="deleteButton"
+                >
+
+                    Delete Images
+
+                </button>
+
+
+
+                <!-- FILE NAME -->
+
+                <div
+                    class="file-name"
+                    id="fileName"
+                ></div>
+
+
+
+                <!-- IMAGE SESSION -->
+
+                <div
+                    class="image-session"
+                    id="imageSession"
+                >
+
+                    No imagery loaded.
+
+                </div>
+
+
+
+               <!-- =========================================
+     QUESTION INPUT
+     ========================================= -->
+
+<textarea
+    class="query-input"
+    id="queryInput"
+    placeholder="Ask about your imagery..."
+    rows="4"
+></textarea>
+
+
+                <!-- =================================
+                     ANALYSIS OPTIONS
+                     ================================= -->
+
+                <div class="analysis-options">
+
+
+                    <button
+                        type="button"
+                        class="analysis-option active"
+                        data-analysis="NDVI"
+                    >
+
+                        <span></span>
+
+                        NDVI
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="analysis-option"
+                        data-analysis="NDWI"
+                    >
+
+                        <span></span>
+
+                        NDWI
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="analysis-option"
+                        data-analysis="Change Detection"
+                    >
+
+                        <span></span>
+
+                        Change
+
+                    </button>
+
+
+                </div>
+
+
+
+                <!-- =================================
+                     RUN ANALYSIS
+                     ================================= -->
+
+                <button
+                    type="button"
+                    class="run-button"
+                    id="runButton"
+                >
+
+                    <span id="runButtonText">
+                        Run Analysis
+                    </span>
+
+
+                    <span
+                        class="loading-circle"
+                        id="loadingCircle"
+                    ></span>
+
+                </button>
+
+
+
+                <!-- =================================
+                     CONTINUE
+                     ================================= -->
+
+                <button
+                    type="button"
+                    class="continue-button"
+                    id="continueButton"
+                >
+
+                    Ask Another Question
+
+                </button>
+
+
+
+                <!-- =================================
+                     CLEAR CHAT
+                     ================================= -->
+
+                <button
+                    type="button"
+                    class="clear-chat-button"
+                    id="clearChatButton"
+                >
+
+                    Clear Chat
+
+                </button>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================
+             RIGHT IMAGE / RESULT PANEL
+             ===================================== -->
+
+        <section class="image-panel">
+
+
+            <!-- =================================
+                 EMPTY STATE
+           ========================================
+     EMPTY STATE
+     ========================================= -->
+
+<div
+    class="empty-state"
+    id="emptyState"
+>
+
+    <div class="empty-state-title">
+        Imagery workspace ready
+    </div>
+
+    <div class="empty-state-text">
+        Upload satellite imagery to begin
+        visual analysis and natural-language
+        querying.
+    </div>
+
+</div>
+
+
+
+            <!-- =================================
+                 IMAGE GALLERY
+                 ================================= -->
+
+            <div
+                class="image-gallery"
+                id="imageGallery"
+            ></div>
+
+
+
+            <!-- =================================
+                 RESULT / CHAT VIEW
+                 ================================= -->
+
+            <div
+                class="result-view"
+                id="resultView"
+            >
+
+
+                <div class="result-inner">
+
+
+                    <!-- =================================
+                         RESULT HEADER
+                         ================================= -->
+
+                    <div class="result-header">
+
+
+                        <div class="result-label">
+
+                            ANALYSIS RESULT
+
+                        </div>
+
+
+                        <div
+                            class="result-status"
+                            id="resultStatus"
+                        >
+
+                            READY
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- =================================
+                         CHAT HISTORY
+                         ================================= -->
+
+                    <div
+                        class="chat-history"
+                        id="chatHistory"
+                    ></div>
+
+
+
+                    <!-- =================================
+                         ASK AGAIN
+                         ================================= -->
+
+                    <button
+                        type="button"
+                        class="result-question-button"
+                        id="resultQuestionButton"
+                    >
+
+                        Ask Another Question
+
+                    </button>
+
+
+
+                    <!-- =================================
+                         CLEAR CHAT RESULT
+                         ================================= -->
+
+                    <button
+                        type="button"
+                        class="clear-chat-result-button"
+                        id="clearChatResultButton"
+                    >
+
+                        Clear Chat
+
+                    </button>
+
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- =========================================
+         JAVASCRIPT
+         ========================================= -->
+
+    <script
+        src="app.js"
+    ></script>
+
+
+</body>
+
+</html>
