@@ -126,7 +126,11 @@ async function handlePreprocess(req, res) {
         originalFormat: imageValidation.metadata.format,
         processedWidth: processedMain.width,
         processedHeight: processedMain.height,
-      }
+      },
+      // Pass the second processed image path when available (for change detection).
+      // When image2 was not uploaded, processedSecond is null → undefined is passed,
+      // which preserves existing single-image behavior in routerService.
+      processedSecond ? processedSecond.path : undefined
     );
 
     // =========================================================
