@@ -189,6 +189,52 @@ async function runAllTests() {
     assert(data.valid === true, `Expected valid=true, got ${data.valid}`);
     assert(data.processedImage.format === 'png', `Expected PNG output, got ${data.processedImage.format}`);
     assert(data.processedImage.wasResized === false, 'Image should NOT have been resized');
+    assert(typeof data.processedImage.path === 'string' && data.processedImage.path.length > 0,
+      'processedImage.path should be a non-empty string');
+
+    // --- Router Contract Assertions (Single Image) ---
+    const payload = data.router?.payload;
+    assert(payload, 'data.router.payload should exist in stub mode');
+
+    // FIX 3: request_id exists and is non-empty
+    assert(typeof payload.request_id === 'string' && payload.request_id.length > 0,
+      'payload.request_id must be a non-empty string');
+
+    // FIX 1: Main image is under "image" (NOT "processedImage")
+    assert(payload.image, 'payload.image must exist');
+    assert(payload.processedImage === undefined,
+      'payload.processedImage must NOT be used in Router payload');
+    assert(typeof payload.image.filename === 'string' && payload.image.filename.length > 0,
+      'payload.image.filename must be a non-empty string');
+    assert(payload.image.path === data.processedImage.path,
+      'payload.image.path must match processedImage.path');
+    assert(payload.image.format === 'png',
+      `payload.image.format must be "png", got ${payload.image.format}`);
+    assert(payload.image.width === 800, `payload.image.width should be 800, got ${payload.image.width}`);
+    assert(payload.image.height === 600, `payload.image.height should be 600, got ${payload.image.height}`);
+    assert(typeof payload.image.size_bytes === 'number' && payload.image.size_bytes > 0,
+      `payload.image.size_bytes must be a positive number, got ${payload.image.size_bytes}`);
+    assert(payload.image.sizeBytes === undefined,
+      'payload.image must use size_bytes, NOT sizeBytes');
+
+    // Single image request: image2 must be null
+    assert(payload.image2 === null,
+      `payload.image2 must be null for single-image request, got ${JSON.stringify(payload.image2)}`);
+
+    // FIX 2: Metadata must use snake_case and NOT contain camelCase
+    assert(payload.metadata, 'payload.metadata must exist');
+    assert(payload.metadata.original_format === 'jpeg',
+      `metadata.original_format should be "jpeg", got ${payload.metadata.original_format}`);
+    assert(payload.metadata.processed_width === 800,
+      `metadata.processed_width should be 800, got ${payload.metadata.processed_width}`);
+    assert(payload.metadata.processed_height === 600,
+      `metadata.processed_height should be 600, got ${payload.metadata.processed_height}`);
+    assert(payload.metadata.originalFormat === undefined,
+      'metadata must NOT contain camelCase originalFormat');
+    assert(payload.metadata.processedWidth === undefined,
+      'metadata must NOT contain camelCase processedWidth');
+    assert(payload.metadata.processedHeight === undefined,
+      'metadata must NOT contain camelCase processedHeight');
   });
 
   // ------ Test 3: Valid PNG Upload ------
@@ -402,16 +448,93 @@ async function runAllTests() {
     // Main image should be preprocessed
     assert(data.processedImage, 'processedImage should exist');
     assert(data.processedImage.format === 'png', `Expected main image format "png", got "${data.processedImage.format}"`);
+    assert(typeof data.processedImage.path === 'string' && data.processedImage.path.length > 0,
+      'processedImage.path should be a non-empty string');
+
     // Second image should also be preprocessed
     assert(data.processedImage2, 'processedImage2 should exist when image2 is uploaded');
     assert(data.processedImage2.format === 'png', `Expected second image format "png", got "${data.processedImage2.format}"`);
+    assert(typeof data.processedImage2.path === 'string' && data.processedImage2.path.length > 0,
+      'processedImage2.path should be a non-empty string');
+
     // Original image info for both should be present
     assert(data.originalImage, 'originalImage should exist');
     assert(data.originalImage2, 'originalImage2 should exist');
     assert(data.originalImage2.format === 'png', `Expected originalImage2 format "png", got "${data.originalImage2.format}"`);
+
     // Router stub should confirm image2 was passed through
     assert(data.router.forwarded === false, 'Router should still be stubbed');
     assert(data.router.image2Included === true, 'Router stub should report image2Included=true');
+
+    // --- Router Contract Assertions (Paired Images) ---
+    const payload = data.router?.payload;
+    assert(payload, 'data.router.payload should exist in stub mode');
+
+    // FIX 3: request_id exists and is non-empty
+    assert(typeof payload.request_id === 'string' && payload.request_id.length > 0,
+      'payload.request_id must be a non-empty string');
+
+    // FIX 1: Main image is under "image" (NOT "processedImage")
+    assert(payload.image, 'payload.image must exist');
+    assert(payload.processedImage === undefined,
+      'payload.processedImage must NOT be used in Router payload');
+    assert(typeof payload.image.filename === 'string' && payload.image.filename.length > 0,
+      'payload.image.filename must be a non-empty string');
+    assert(payload.image.path === data.processedImage.path,
+      'payload.image.path must match processedImage.path');
+    assert(payload.image.format === 'png',
+      `payload.image.format must be "png", got ${payload.image.format}`);
+    assert(typeof payload.image.width === 'number' && payload.image.width > 0,
+      `payload.image.width must be a positive number, got ${payload.image.width}`);
+    assert(typeof payload.image.height === 'number' && payload.image.height > 0,
+      `payload.image.height must be a positive number, got ${payload.image.height}`);
+    assert(typeof payload.image.size_bytes === 'number' && payload.image.size_bytes > 0,
+      `payload.image.size_bytes must be a positive number, got ${payload.image.size_bytes}`);
+    assert(payload.image.sizeBytes === undefined,
+      'payload.image must use size_bytes, NOT sizeBytes');
+
+    // Image 2: must exist, NOT be null, and have its own independent metadata
+    assert(payload.image2 !== null && typeof payload.image2 === 'object',
+      'payload.image2 must be a non-null object when second image is uploaded');
+    assert(typeof payload.image2.filename === 'string' && payload.image2.filename.length > 0,
+      'payload.image2.filename must be a non-empty string');
+    assert(payload.image2.path === data.processedImage2.path,
+      'payload.image2.path must match processedImage2.path');
+    assert(payload.image2.format === 'png',
+      `payload.image2.format must be "png", got ${payload.image2.format}`);
+    assert(typeof payload.image2.width === 'number' && payload.image2.width > 0,
+      `payload.image2.width must be a positive number, got ${payload.image2.width}`);
+    assert(typeof payload.image2.height === 'number' && payload.image2.height > 0,
+      `payload.image2.height must be a positive number, got ${payload.image2.height}`);
+    assert(typeof payload.image2.size_bytes === 'number' && payload.image2.size_bytes > 0,
+      `payload.image2.size_bytes must be a positive number, got ${payload.image2.size_bytes}`);
+    assert(payload.image2.sizeBytes === undefined,
+      'payload.image2 must use size_bytes, NOT sizeBytes');
+
+    // FIX 2: Metadata must use snake_case and NOT contain camelCase
+    assert(payload.metadata, 'payload.metadata must exist');
+    assert(payload.metadata.original_format === 'jpeg',
+      `metadata.original_format should be "jpeg", got ${payload.metadata.original_format}`);
+    assert(typeof payload.metadata.processed_width === 'number',
+      'metadata.processed_width must be a number');
+    assert(typeof payload.metadata.processed_height === 'number',
+      'metadata.processed_height must be a number');
+    assert(payload.metadata.originalFormat === undefined,
+      'metadata must NOT contain camelCase originalFormat');
+    assert(payload.metadata.processedWidth === undefined,
+      'metadata must NOT contain camelCase processedWidth');
+    assert(payload.metadata.processedHeight === undefined,
+      'metadata must NOT contain camelCase processedHeight');
+
+    // Test request_id uniqueness by issuing a second request
+    const secondReq = await postPreprocess({
+      image: img1Path,
+      image2: img2Path,
+      question: 'Are there changes over time?',
+    });
+    assert(secondReq.data.router?.payload?.request_id, 'Second request_id must exist');
+    assert(secondReq.data.router.payload.request_id !== payload.request_id,
+      'request_id must be unique for separate requests');
   });
 
   // ============================================================
