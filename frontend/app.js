@@ -1,6 +1,18 @@
 /* =========================================
    SATQUERY AI — APPLICATION LOGIC
+   PREPROCESSING + ROUTER INTEGRATION
    ========================================= */
+
+
+/* =========================================
+   API CONFIGURATION
+   ========================================= */
+
+const PREPROCESS_URL =
+    "http://localhost:4000/api/preprocess";
+
+const ROUTER_URL =
+    "http://localhost:8000/api/router/analyze";
 
 
 /* =========================================
@@ -91,8 +103,6 @@ const chatCount =
 
 let selectedFiles = [];
 
-let selectedAnalysis = "NDVI";
-
 let questionHistory = [];
 
 let analysisRunning = false;
@@ -104,11 +114,14 @@ let currentChatId = null;
    INDEXEDDB
    ========================================= */
 
-const DB_NAME = "SatQueryDB";
+const DB_NAME =
+    "SatQueryDB";
 
-const DB_VERSION = 1;
+const DB_VERSION =
+    1;
 
-const STORE_NAME = "chats";
+const STORE_NAME =
+    "chats";
 
 
 function openDatabase() {
@@ -262,13 +275,17 @@ async function getAllChats() {
                     const chats =
                         request.result || [];
 
+
                     chats.sort(
                         (a, b) =>
                             new Date(b.timestamp) -
                             new Date(a.timestamp)
                     );
 
-                    resolve(chats);
+
+                    resolve(
+                        chats
+                    );
 
                 };
 
@@ -316,6 +333,7 @@ async function saveChat() {
         images:
             selectedFiles.map(
                 (file) => ({
+
                     name:
                         file.name,
 
@@ -330,6 +348,7 @@ async function saveChat() {
 
                     blob:
                         file
+
                 })
             )
 
@@ -500,19 +519,24 @@ async function startNewChat() {
     currentChatId =
         createChatId();
 
-    selectedFiles = [];
 
-    selectedAnalysis =
-        "NDVI";
+    selectedFiles =
+        [];
 
-    questionHistory = [];
+
+    questionHistory =
+        [];
+
 
     analysisRunning =
         false;
 
 
     if (imageInput) {
-        imageInput.value = "";
+
+        imageInput.value =
+            "";
+
     }
 
 
@@ -528,8 +552,10 @@ async function startNewChat() {
 
 
     if (chatHistory) {
+
         chatHistory.innerHTML =
             "";
+
     }
 
 
@@ -601,6 +627,19 @@ if (
         "click",
         () => {
 
+            if (
+                selectedFiles.length >= 2
+            ) {
+
+                alert(
+                    "SatQuery allows a maximum of 2 images."
+                );
+
+                return;
+
+            }
+
+
             imageInput.click();
 
         }
@@ -634,9 +673,44 @@ if (imageInput) {
             }
 
 
-            /*
-               CREATE CHAT IF NEEDED
-            */
+            const remainingSlots =
+                2 - selectedFiles.length;
+
+
+            if (
+                remainingSlots <= 0
+            ) {
+
+                alert(
+                    "SatQuery allows a maximum of 2 images."
+                );
+
+                imageInput.value =
+                    "";
+
+                return;
+
+            }
+
+
+            const filesToAdd =
+                files.slice(
+                    0,
+                    remainingSlots
+                );
+
+
+            if (
+                files.length >
+                remainingSlots
+            ) {
+
+                alert(
+                    "Only 2 images are allowed."
+                );
+
+            }
+
 
             if (!currentChatId) {
 
@@ -646,11 +720,7 @@ if (imageInput) {
             }
 
 
-            /*
-               ADD NEW FILES
-            */
-
-            files.forEach(
+            filesToAdd.forEach(
                 (file) => {
 
                     const alreadyExists =
@@ -669,7 +739,8 @@ if (imageInput) {
 
 
                     if (
-                        !alreadyExists
+                        !alreadyExists &&
+                        selectedFiles.length < 2
                     ) {
 
                         selectedFiles.push(
@@ -682,26 +753,14 @@ if (imageInput) {
             );
 
 
-            /*
-               RESET INPUT
-            */
-
             imageInput.value =
                 "";
 
-
-            /*
-               RENDER
-            */
 
             renderImageGallery();
 
             updateImageSession();
 
-
-            /*
-               SHOW IMAGE VIEW
-            */
 
             if (resultView) {
 
@@ -720,15 +779,6 @@ if (imageInput) {
 
             }
 
-
-            /*
-               IMPORTANT:
-               DO NOT CLEAR CHAT HISTORY.
-
-               Existing conversation stays
-               when additional images are
-               uploaded.
-            */
 
             await saveChat();
 
@@ -777,10 +827,6 @@ function renderImageGallery() {
     );
 
 
-    /*
-       SELECT LAYOUT
-    */
-
     if (
         selectedFiles.length === 1
     ) {
@@ -791,9 +837,7 @@ function renderImageGallery() {
 
     }
 
-    else if (
-        selectedFiles.length === 2
-    ) {
+    else {
 
         imageGallery.classList.add(
             "double"
@@ -801,28 +845,6 @@ function renderImageGallery() {
 
     }
 
-    else if (
-        selectedFiles.length === 3
-    ) {
-
-        imageGallery.classList.add(
-            "triple"
-        );
-
-    }
-
-    else {
-
-        imageGallery.classList.add(
-            "multi"
-        );
-
-    }
-
-
-    /*
-       CREATE IMAGE CARDS
-    */
 
     selectedFiles.forEach(
         (file, index) => {
@@ -832,74 +854,68 @@ function renderImageGallery() {
                     "div"
                 );
 
+
             card.className =
                 "image-card";
 
-
-            /*
-               IMAGE
-            */
 
             const img =
                 document.createElement(
                     "img"
                 );
 
+
             const objectURL =
                 URL.createObjectURL(
                     file
                 );
 
+
             img.src =
                 objectURL;
+
 
             img.alt =
                 file.name;
 
-
-            /*
-               IMAGE NUMBER
-            */
 
             const number =
                 document.createElement(
                     "div"
                 );
 
+
             number.className =
                 "image-number";
+
 
             number.textContent =
                 `IMAGE ${index + 1}`;
 
-
-            /*
-               REMOVE BUTTON
-            */
 
             const removeButton =
                 document.createElement(
                     "button"
                 );
 
+
             removeButton.className =
                 "remove-image";
 
+
             removeButton.type =
                 "button";
+
 
             removeButton.setAttribute(
                 "aria-label",
                 `Remove image ${index + 1}`
             );
 
+
             removeButton.textContent =
                 "×";
 
-
-            /*
-               REMOVE ONLY THIS IMAGE
-            */
 
             removeButton.addEventListener(
                 "click",
@@ -915,17 +931,15 @@ function renderImageGallery() {
             );
 
 
-            /*
-               BUILD CARD
-            */
-
             card.appendChild(
                 img
             );
 
+
             card.appendChild(
                 number
             );
+
 
             card.appendChild(
                 removeButton
@@ -969,16 +983,13 @@ async function removeImage(index) {
     updateImageSession();
 
 
-    /*
-       NO IMAGES LEFT
-    */
-
     if (
         selectedFiles.length === 0
     ) {
 
         questionHistory =
             [];
+
 
         if (chatHistory) {
 
@@ -1022,10 +1033,6 @@ function updateImageSession() {
     const count =
         selectedFiles.length;
 
-
-    /*
-       NO IMAGES
-    */
 
     if (count === 0) {
 
@@ -1080,10 +1087,6 @@ function updateImageSession() {
     }
 
 
-    /*
-       IMAGES EXIST
-    */
-
     if (emptyState) {
 
         emptyState.style.display =
@@ -1110,10 +1113,6 @@ function updateImageSession() {
     }
 
 
-    /*
-       FILE NAME / COUNT
-    */
-
     if (fileName) {
 
         if (count === 1) {
@@ -1126,16 +1125,12 @@ function updateImageSession() {
         else {
 
             fileName.textContent =
-                `${count} images selected`;
+                "2 images selected";
 
         }
 
     }
 
-
-    /*
-       SESSION STATUS
-    */
 
     if (imageSession) {
 
@@ -1149,7 +1144,7 @@ function updateImageSession() {
         else {
 
             imageSession.textContent =
-                `${count} images loaded — ready for analysis.`;
+                "2 images loaded — ready for comparison.";
 
         }
 
@@ -1176,6 +1171,7 @@ if (deleteButton) {
             selectedFiles =
                 [];
 
+
             if (imageInput) {
 
                 imageInput.value =
@@ -1194,10 +1190,6 @@ if (deleteButton) {
 
             }
 
-
-            /*
-               Keep current chat.
-            */
 
             if (resultView) {
 
@@ -1240,8 +1232,16 @@ if (deleteButton) {
 
 
 /* =========================================
-   ANALYSIS TYPE
+   OLD ANALYSIS OPTIONS
    ========================================= */
+
+/*
+   Router decides the analysis type
+   from the question.
+
+   These old buttons are therefore
+   NOT sent to the backend.
+*/
 
 analysisOptions.forEach(
     (option) => {
@@ -1265,10 +1265,6 @@ analysisOptions.forEach(
                     "active"
                 );
 
-
-                selectedAnalysis =
-                    option.dataset.analysis;
-
             }
         );
 
@@ -1284,11 +1280,7 @@ if (runButton) {
 
     runButton.addEventListener(
         "click",
-        () => {
-
-            runAnalysis();
-
-        }
+        runAnalysis
     );
 
 }
@@ -1322,14 +1314,278 @@ if (queryInput) {
 
 
 /* =========================================
+   PREPROCESS IMAGES
+   ========================================= */
+
+async function preprocessImages(
+    question
+) {
+
+    if (
+        selectedFiles.length === 0
+    ) {
+
+        throw new Error(
+            "No image selected."
+        );
+
+    }
+
+
+    const formData =
+        new FormData();
+
+
+    /*
+       FIRST IMAGE
+    */
+
+    formData.append(
+        "image",
+        selectedFiles[0]
+    );
+
+
+    /*
+       SECOND IMAGE
+       OPTIONAL
+    */
+
+    if (
+        selectedFiles.length === 2
+    ) {
+
+        formData.append(
+            "image2",
+            selectedFiles[1]
+        );
+
+    }
+
+
+    /*
+       QUESTION
+    */
+
+    formData.append(
+        "question",
+        question
+    );
+
+
+    console.log(
+        "→ Sending images to preprocessing..."
+    );
+
+
+    const response =
+        await fetch(
+            PREPROCESS_URL,
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+
+    let data;
+
+
+    try {
+
+        data =
+            await response.json();
+
+    }
+
+    catch (error) {
+
+        throw new Error(
+            `Preprocessing returned invalid JSON. HTTP ${response.status}`
+        );
+
+    }
+
+
+    console.log(
+        "← Preprocessing response:",
+        data
+    );
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            data?.error ||
+            data?.message ||
+            `Preprocessing failed with HTTP ${response.status}`
+        );
+
+    }
+
+
+    if (
+        !data.processedImage
+    ) {
+
+        throw new Error(
+            "Preprocessing response does not contain processedImage."
+        );
+
+    }
+
+
+    if (
+        selectedFiles.length === 2 &&
+        !data.processedImage2
+    ) {
+
+        throw new Error(
+            "Second image was uploaded, but preprocessing did not return processedImage2."
+        );
+
+    }
+
+
+    return data;
+
+}
+
+
+/* =========================================
+   ROUTER REQUEST
+   ========================================= */
+
+async function callRouter(
+    question
+) {
+
+    /*
+       FIRST:
+       preprocess the images
+    */
+
+    const preprocessingResponse =
+        await preprocessImages(
+            question
+        );
+
+
+    /*
+       BUILD ROUTER JSON
+
+       Single image:
+       {
+           question,
+           image
+       }
+
+       Two images:
+       {
+           question,
+           image,
+           image2
+       }
+    */
+
+    const requestBody = {
+
+        question:
+            question,
+
+        image:
+            preprocessingResponse.processedImage
+
+    };
+
+
+    if (
+        selectedFiles.length === 2
+    ) {
+
+        requestBody.image2 =
+            preprocessingResponse.processedImage2;
+
+    }
+
+
+    console.log(
+        "→ Sending request to Router:",
+        requestBody
+    );
+
+
+    /*
+       ROUTER REQUEST IS JSON
+    */
+
+    const response =
+        await fetch(
+            ROUTER_URL,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(
+                        requestBody
+                    )
+
+            }
+        );
+
+
+    let data;
+
+
+    try {
+
+        data =
+            await response.json();
+
+    }
+
+    catch (error) {
+
+        throw new Error(
+            `Router returned invalid JSON. HTTP ${response.status}`
+        );
+
+    }
+
+
+    console.log(
+        "← Router response:",
+        data
+    );
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            data?.answer ||
+            data?.error ||
+            data?.message ||
+            `Router failed with HTTP ${response.status}`
+        );
+
+    }
+
+
+    return data;
+
+}
+
+
+/* =========================================
    RUN ANALYSIS
    ========================================= */
 
 async function runAnalysis() {
-
-    /*
-       DON'T ALLOW DUPLICATE REQUEST
-    */
 
     if (analysisRunning) {
         return;
@@ -1337,7 +1593,7 @@ async function runAnalysis() {
 
 
     /*
-       IMAGE REQUIRED
+       IMAGE CHECK
     */
 
     if (
@@ -1354,7 +1610,24 @@ async function runAnalysis() {
 
 
     /*
-       QUESTION REQUIRED
+       MAX 2
+    */
+
+    if (
+        selectedFiles.length > 2
+    ) {
+
+        alert(
+            "SatQuery allows a maximum of 2 images."
+        );
+
+        return;
+
+    }
+
+
+    /*
+       QUESTION CHECK
     */
 
     const query =
@@ -1375,7 +1648,7 @@ async function runAnalysis() {
 
 
     /*
-       CREATE CHAT IF NEEDED
+       CREATE CHAT
     */
 
     if (!currentChatId) {
@@ -1386,27 +1659,18 @@ async function runAnalysis() {
     }
 
 
-    /*
-       START ANALYSIS
-    */
-
     analysisRunning =
         true;
 
 
     /*
-       IMPORTANT:
-       Save the actual images used
-       by THIS question.
+       SAVE QUESTION
     */
 
     const conversation = {
 
         question:
             query,
-
-        analysis:
-            selectedAnalysis,
 
         imageCount:
             selectedFiles.length,
@@ -1418,6 +1682,27 @@ async function runAnalysis() {
             new Date(),
 
         answer:
+            null,
+
+        status:
+            "processing",
+
+        confidence:
+            null,
+
+        tasks:
+            [],
+
+        tools_used:
+            [],
+
+        results:
+            [],
+
+        errors:
+            [],
+
+        routerResponse:
             null
 
     };
@@ -1429,37 +1714,13 @@ async function runAnalysis() {
 
 
     /*
-       BUTTON STATE
+       UI — LOADING
     */
 
-    if (runButton) {
+    setAnalysisLoading(
+        true
+    );
 
-        runButton.disabled =
-            true;
-
-    }
-
-
-    if (runButtonText) {
-
-        runButtonText.textContent =
-            "Analyzing...";
-
-    }
-
-
-    if (loadingCircle) {
-
-        loadingCircle.classList.add(
-            "loading"
-        );
-
-    }
-
-
-    /*
-       HIDE LARGE IMAGE VIEW
-    */
 
     if (imageGallery) {
 
@@ -1470,10 +1731,6 @@ async function runAnalysis() {
     }
 
 
-    /*
-       SHOW RESULT VIEW
-    */
-
     if (resultView) {
 
         resultView.classList.add(
@@ -1483,20 +1740,13 @@ async function runAnalysis() {
     }
 
 
-    /*
-       STATUS
-    */
-
-    if (resultStatus) {
-
-        resultStatus.textContent =
-            "PROCESSING";
-
-    }
+    setResultStatus(
+        "PROCESSING"
+    );
 
 
     /*
-       ADD QUESTION
+       SHOW USER QUESTION
     */
 
     addQuestionMessage(
@@ -1505,7 +1755,7 @@ async function runAnalysis() {
 
 
     /*
-       LOADING MESSAGE
+       SHOW LOADING
     */
 
     const loadingMessage =
@@ -1517,6 +1767,181 @@ async function runAnalysis() {
     scrollChatToBottom();
 
 
+    await saveChat();
+
+
+    try {
+
+        /*
+           REAL:
+           PREPROCESS → ROUTER
+        */
+
+        const routerResponse =
+            await callRouter(
+                query
+            );
+
+
+        /*
+           STORE RESPONSE
+        */
+
+        conversation.routerResponse =
+            routerResponse;
+
+
+        conversation.answer =
+            routerResponse.answer ||
+            "";
+
+
+        conversation.status =
+            routerResponse.status ||
+            "success";
+
+
+        conversation.confidence =
+            routerResponse.confidence;
+
+
+        conversation.tasks =
+            routerResponse.tasks ||
+            [];
+
+
+        conversation.tools_used =
+            routerResponse.tools_used ||
+            [];
+
+
+        conversation.results =
+            routerResponse.results ||
+            [];
+
+
+        conversation.errors =
+            routerResponse.errors ||
+            [];
+
+
+        /*
+           REMOVE LOADING
+        */
+
+        if (loadingMessage) {
+
+            loadingMessage.remove();
+
+        }
+
+
+        /*
+           SHOW RESULT
+        */
+
+        addAnswerMessage(
+            conversation
+        );
+
+
+        /*
+           RESULT STATE
+        */
+
+        const status =
+            String(
+                conversation.status
+            ).toLowerCase();
+
+
+        if (
+            status === "failed" ||
+            status === "error"
+        ) {
+
+            setResultStatus(
+                "FAILED"
+            );
+
+        }
+
+        else if (
+            status === "partial"
+        ) {
+
+            setResultStatus(
+                "PARTIAL"
+            );
+
+        }
+
+        else {
+
+            setResultStatus(
+                "COMPLETE"
+            );
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "SatQuery analysis error:",
+            error
+        );
+
+
+        conversation.status =
+            "failed";
+
+
+        conversation.answer =
+            error.message ||
+            "Unable to complete analysis.";
+
+
+        conversation.errors =
+            [
+                error.message ||
+                "Unknown error"
+            ];
+
+
+        if (loadingMessage) {
+
+            loadingMessage.remove();
+
+        }
+
+
+        addErrorMessage(
+            conversation
+        );
+
+
+        setResultStatus(
+            "ERROR"
+        );
+
+    }
+
+
+    /*
+       FINISH LOADING
+    */
+
+    setAnalysisLoading(
+        false
+    );
+
+
+    analysisRunning =
+        false;
+
+
     /*
        SAVE CHAT
     */
@@ -1525,156 +1950,98 @@ async function runAnalysis() {
 
 
     /*
-       =====================================
-       TEMPORARY API SIMULATION
-       =====================================
-
-       Replace this setTimeout with
-       your real API call later.
+       ENABLE NEXT QUESTION
     */
 
-    setTimeout(
-        async () => {
+    if (continueButton) {
 
-            /*
-               REMOVE LOADING
-            */
+        continueButton.classList.add(
+            "visible"
+        );
 
-            if (loadingMessage) {
-
-                loadingMessage.remove();
-
-            }
+    }
 
 
-            /*
-               TEMPORARY ANSWER
-            */
+    /*
+       CLEAR QUESTION INPUT
+    */
 
-            const answerText =
-                getTemporaryAnswer(
-                    conversation
-                );
+    queryInput.value =
+        "";
 
 
-            conversation.answer =
-                answerText;
+    queryInput.focus();
 
 
-            /*
-               ADD ANSWER
-            */
-
-            addAnswerMessage(
-                conversation
-            );
-
-
-            /*
-               COMPLETE
-            */
-
-            if (resultStatus) {
-
-                resultStatus.textContent =
-                    "COMPLETE";
-
-            }
-
-
-            if (runButton) {
-
-                runButton.disabled =
-                    false;
-
-            }
-
-
-            if (runButtonText) {
-
-                runButtonText.textContent =
-                    "Run Analysis";
-
-            }
-
-
-            if (loadingCircle) {
-
-                loadingCircle.classList.remove(
-                    "loading"
-                );
-
-            }
-
-
-            analysisRunning =
-                false;
-
-
-            /*
-               SAVE UPDATED ANSWER
-            */
-
-            await saveChat();
-
-
-            /*
-               ALLOW ANOTHER QUESTION
-            */
-
-            if (continueButton) {
-
-                continueButton.classList.add(
-                    "visible"
-                );
-
-            }
-
-
-            /*
-               CLEAR INPUT
-            */
-
-            queryInput.value =
-                "";
-
-
-            /*
-               FOCUS
-            */
-
-            queryInput.focus();
-
-
-            /*
-               SCROLL
-            */
-
-            scrollChatToBottom();
-
-        },
-        1800
-    );
+    scrollChatToBottom();
 
 }
 
 
 /* =========================================
-   TEMPORARY ANSWER
+   LOADING UI
    ========================================= */
 
-function getTemporaryAnswer(
-    data
+function setAnalysisLoading(
+    loading
 ) {
 
-    return (
-        `Analysis completed for "${data.question}". ` +
-        `The ${data.analysis} workflow processed ` +
-        `${data.imageCount} image` +
-        `${data.imageCount > 1 ? "s" : ""}. ` +
-        `The real satellite-analysis API response ` +
-        `will appear here once connected.`
-    );
+    if (runButton) {
+
+        runButton.disabled =
+            loading;
+
+    }
+
+
+    if (runButtonText) {
+
+        runButtonText.textContent =
+            loading
+                ? "Analyzing..."
+                : "Run Analysis";
+
+    }
+
+
+    if (loadingCircle) {
+
+        if (loading) {
+
+            loadingCircle.classList.add(
+                "loading"
+            );
+
+        }
+
+        else {
+
+            loadingCircle.classList.remove(
+                "loading"
+            );
+
+        }
+
+    }
+
+}
+
+
+/* =========================================
+   RESULT STATUS
+   ========================================= */
+
+function setResultStatus(
+    status
+) {
+
+    if (!resultStatus) {
+        return;
+    }
+
+
+    resultStatus.textContent =
+        status;
 
 }
 
@@ -1697,22 +2064,19 @@ function addQuestionMessage(
         "chat-message user-message";
 
 
-    /*
-       IMAGE PREVIEW
-    */
-
     const imagePreview =
         document.createElement(
             "div"
         );
+
 
     imagePreview.className =
         "question-image-preview";
 
 
     /*
-       ADD ALL IMAGES USED
-       FOR THIS QUESTION
+       SHOW THE ACTUAL IMAGE(S)
+       USED BY THIS QUESTION
     */
 
     if (
@@ -1727,6 +2091,7 @@ function addQuestionMessage(
                     document.createElement(
                         "div"
                     );
+
 
                 wrapper.className =
                     "question-image-wrapper";
@@ -1756,10 +2121,6 @@ function addQuestionMessage(
                     "Click to view image";
 
 
-                /*
-                   OPEN LARGE IMAGE
-                */
-
                 img.addEventListener(
                     "click",
                     () => {
@@ -1788,10 +2149,6 @@ function addQuestionMessage(
     }
 
 
-    /*
-       QUESTION CONTENT
-    */
-
     const content =
         document.createElement(
             "div"
@@ -1813,17 +2170,13 @@ function addQuestionMessage(
         </div>
 
         <div class="message-analysis">
-            ${escapeHTML(data.analysis)}
-            · ${data.imageCount}
+            ${data.imageCount}
             image${data.imageCount > 1 ? "s" : ""}
+            · Router decides analysis
         </div>
 
     `;
 
-
-    /*
-       BUILD MESSAGE
-    */
 
     message.appendChild(
         imagePreview
@@ -1877,7 +2230,8 @@ function addLoadingMessage(
             Processing
             ${data.imageCount}
             image${data.imageCount > 1 ? "s" : ""}
-            and generating insights.
+            and routing your question
+            to the appropriate analysis.
         </p>
 
     `;
@@ -1911,6 +2265,91 @@ function addAnswerMessage(
         "chat-message ai-message";
 
 
+    const response =
+        data.routerResponse ||
+        {};
+
+
+    const status =
+        String(
+            data.status ||
+            response.status ||
+            "success"
+        ).toLowerCase();
+
+
+    let statusLabel =
+        "SUCCESS";
+
+
+    if (
+        status === "partial"
+    ) {
+
+        statusLabel =
+            "PARTIAL";
+
+    }
+
+    else if (
+        status === "failed" ||
+        status === "error"
+    ) {
+
+        statusLabel =
+            "FAILED";
+
+    }
+
+
+    let confidenceHTML =
+        "";
+
+
+    if (
+        data.confidence !== null &&
+        data.confidence !== undefined
+    ) {
+
+        const confidenceValue =
+            Number(
+                data.confidence
+            );
+
+
+        const confidenceDisplay =
+            confidenceValue <= 1
+                ? confidenceValue * 100
+                : confidenceValue;
+
+
+        confidenceHTML = `
+
+            <span>
+                CONFIDENCE:
+                ${escapeHTML(
+                    confidenceDisplay
+                        .toFixed(1)
+                )}%
+            </span>
+
+        `;
+
+    }
+
+
+    const tasks =
+        Array.isArray(data.tasks)
+            ? data.tasks
+            : [];
+
+
+    const tools =
+        Array.isArray(data.tools_used)
+            ? data.tools_used
+            : [];
+
+
     message.innerHTML = `
 
         <div class="message-label">
@@ -1918,16 +2357,546 @@ function addAnswerMessage(
         </div>
 
         <h3>
-            ${escapeHTML(data.analysis)}
-            Analysis
+            Analysis Result
         </h3>
 
-        <p>
+        <div class="router-answer">
             ${escapeHTML(
                 data.answer ||
-                getTemporaryAnswer(data)
+                "No answer returned by Router."
+            )}
+        </div>
+
+        <div class="router-meta">
+
+            <span>
+                STATUS:
+                ${escapeHTML(
+                    statusLabel
+                )}
+            </span>
+
+            ${confidenceHTML}
+
+        </div>
+
+        ${
+            tasks.length > 0
+                ? `
+                    <div class="router-detail">
+
+                        <strong>
+                            Tasks
+                        </strong>
+
+                        <div>
+                            ${escapeHTML(
+                                tasks.join(", ")
+                            )}
+                        </div>
+
+                    </div>
+                  `
+                : ""
+        }
+
+        ${
+            tools.length > 0
+                ? `
+                    <div class="router-detail">
+
+                        <strong>
+                            Tools Used
+                        </strong>
+
+                        <div>
+                            ${escapeHTML(
+                                tools.join(", ")
+                            )}
+                        </div>
+
+                    </div>
+                  `
+                : ""
+        }
+
+    `;
+
+
+    /*
+       DETAILED RESULTS
+    */
+
+    if (
+        Array.isArray(data.results) &&
+        data.results.length > 0
+    ) {
+
+        const resultsContainer =
+            document.createElement(
+                "div"
+            );
+
+
+        resultsContainer.className =
+            "router-results";
+
+
+        const title =
+            document.createElement(
+                "div"
+            );
+
+
+        title.className =
+            "router-detail-title";
+
+
+        title.textContent =
+            "ANALYSIS DETAILS";
+
+
+        resultsContainer.appendChild(
+            title
+        );
+
+
+        data.results.forEach(
+            (result) => {
+
+                const resultCard =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                resultCard.className =
+                    "router-result-card";
+
+
+                const tool =
+                    result.tool ||
+                    "analysis";
+
+
+                let html = `
+
+                    <div class="router-result-tool">
+                        ${escapeHTML(
+                            String(
+                                tool
+                            ).toUpperCase()
+                        )}
+                    </div>
+
+                `;
+
+
+                if (
+                    result.output
+                ) {
+
+                    const output =
+                        result.output;
+
+
+                    const analysisType =
+                        output.analysis_type ||
+                        tool;
+
+
+                    html += `
+
+                        <div class="router-detail">
+
+                            <strong>
+                                Type
+                            </strong>
+
+                            <div>
+                                ${escapeHTML(
+                                    String(
+                                        analysisType
+                                    )
+                                )}
+                            </div>
+
+                        </div>
+
+                    `;
+
+
+                    if (
+                        output.result
+                    ) {
+
+                        html +=
+                            buildResultHTML(
+                                output.result
+                            );
+
+                    }
+
+                }
+
+
+                /*
+                   OUTPUT FILES
+                */
+
+                if (
+                    result.output_files
+                ) {
+
+                    html += `
+
+                        <div class="router-detail">
+
+                            <strong>
+                                Output Files
+                            </strong>
+
+                            <div>
+                                ${escapeHTML(
+                                    JSON.stringify(
+                                        result.output_files
+                                    )
+                                )}
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+
+
+                /*
+                   WARNINGS
+                */
+
+                if (
+                    Array.isArray(
+                        result.warnings
+                    ) &&
+                    result.warnings.length > 0
+                ) {
+
+                    html += `
+
+                        <div class="router-warning">
+
+                            <strong>
+                                Warnings
+                            </strong>
+
+                            <div>
+                                ${escapeHTML(
+                                    result.warnings.join(
+                                        ", "
+                                    )
+                                )}
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+
+
+                /*
+                   ERROR
+                */
+
+                if (
+                    result.error
+                ) {
+
+                    html += `
+
+                        <div class="router-error">
+
+                            ${escapeHTML(
+                                String(
+                                    result.error
+                                )
+                            )}
+
+                        </div>
+
+                    `;
+
+                }
+
+
+                resultCard.innerHTML =
+                    html;
+
+
+                if (
+                    result.success === false
+                ) {
+
+                    resultCard.classList.add(
+                        "failed"
+                    );
+
+                }
+
+
+                resultsContainer.appendChild(
+                    resultCard
+                );
+
+            }
+        );
+
+
+        message.appendChild(
+            resultsContainer
+        );
+
+    }
+
+
+    /*
+       TOP-LEVEL ERRORS
+    */
+
+    if (
+        Array.isArray(data.errors) &&
+        data.errors.length > 0
+    ) {
+
+        const errors =
+            document.createElement(
+                "div"
+            );
+
+
+        errors.className =
+            "router-error";
+
+
+        errors.innerHTML = `
+
+            <strong>
+                Errors
+            </strong>
+
+            <div>
+                ${escapeHTML(
+                    data.errors.join(
+                        " | "
+                    )
+                )}
+            </div>
+
+        `;
+
+
+        message.appendChild(
+            errors
+        );
+
+    }
+
+
+    chatHistory.appendChild(
+        message
+    );
+
+
+    return message;
+
+}
+
+
+/* =========================================
+   BUILD RESULT HTML
+   ========================================= */
+
+function buildResultHTML(
+    result
+) {
+
+    if (
+        result === null ||
+        result === undefined
+    ) {
+
+        return "";
+
+    }
+
+
+    if (
+        typeof result !== "object"
+    ) {
+
+        return `
+
+            <div class="router-detail">
+
+                <strong>
+                    Result
+                </strong>
+
+                <div>
+                    ${escapeHTML(
+                        String(
+                            result
+                        )
+                    )}
+                </div>
+
+            </div>
+
+        `;
+
+    }
+
+
+    let html =
+        "";
+
+
+    Object.entries(
+        result
+    ).forEach(
+        ([key, value]) => {
+
+            let displayValue;
+
+
+            if (
+                typeof value === "object"
+            ) {
+
+                displayValue =
+                    JSON.stringify(
+                        value
+                    );
+
+            }
+
+            else {
+
+                displayValue =
+                    String(value);
+
+            }
+
+
+            html += `
+
+                <div class="router-detail">
+
+                    <strong>
+                        ${escapeHTML(
+                            formatKey(key)
+                        )}
+                    </strong>
+
+                    <div>
+                        ${escapeHTML(
+                            displayValue
+                        )}
+                    </div>
+
+                </div>
+
+            `;
+
+        }
+    );
+
+
+    return html;
+
+}
+
+
+/* =========================================
+   FORMAT RESULT KEY
+   ========================================= */
+
+function formatKey(
+    key
+) {
+
+    return String(key)
+        .replace(
+            /_/g,
+            " "
+        )
+        .replace(
+            /\b\w/g,
+            (letter) =>
+                letter.toUpperCase()
+        );
+
+}
+
+
+/* =========================================
+   ERROR MESSAGE
+   ========================================= */
+
+function addErrorMessage(
+    data
+) {
+
+    const message =
+        document.createElement(
+            "div"
+        );
+
+
+    message.className =
+        "chat-message ai-message";
+
+
+    message.innerHTML = `
+
+        <div class="message-label">
+            SATQUERY AI
+        </div>
+
+        <h3>
+            Analysis Failed
+        </h3>
+
+        <p class="router-error">
+            ${escapeHTML(
+                data.answer ||
+                "Something went wrong while processing the request."
             )}
         </p>
+
+        ${
+            data.errors &&
+            data.errors.length > 0
+                ? `
+                    <div class="router-detail">
+
+                        <strong>
+                            Error Details
+                        </strong>
+
+                        <div>
+                            ${escapeHTML(
+                                data.errors.join(
+                                    " | "
+                                )
+                            )}
+                        </div>
+
+                    </div>
+                  `
+                : ""
+        }
 
     `;
 
@@ -1980,10 +2949,6 @@ function askAnotherQuestion() {
 
     }
 
-
-    /*
-       KEEP IMAGES
-    */
 
     if (resultView) {
 
@@ -2055,42 +3020,22 @@ async function clearConversation() {
     }
 
 
-    /*
-       KEEP IMAGES
-    */
-
     questionHistory =
         [];
 
-
-    /*
-       REMOVE OLD MESSAGES
-    */
 
     chatHistory.innerHTML =
         "";
 
 
-    /*
-       RESET STATUS
-    */
-
     resultStatus.textContent =
         "READY";
 
-
-    /*
-       KEEP RESULT VIEW
-    */
 
     resultView.classList.add(
         "visible"
     );
 
-
-    /*
-       HIDE GALLERY
-    */
 
     if (imageGallery) {
 
@@ -2101,10 +3046,6 @@ async function clearConversation() {
     }
 
 
-    /*
-       UPDATE SESSION
-    */
-
     imageSession.textContent =
         `${selectedFiles.length} image${
             selectedFiles.length > 1
@@ -2112,10 +3053,6 @@ async function clearConversation() {
                 : ""
         } retained — new conversation ready.`;
 
-
-    /*
-       NEW CONVERSATION MESSAGE
-    */
 
     const newChat =
         document.createElement(
@@ -2149,10 +3086,6 @@ async function clearConversation() {
         newChat
     );
 
-
-    /*
-       CLEAR INPUT
-    */
 
     queryInput.value =
         "";
@@ -2235,10 +3168,6 @@ async function renderChatList() {
         await getAllChats();
 
 
-    /*
-       CLEAR LIST
-    */
-
     chatList.innerHTML =
         "";
 
@@ -2273,10 +3202,6 @@ async function renderChatList() {
         );
 
 
-    /*
-       EMPTY
-    */
-
     if (
         filteredChats.length === 0
     ) {
@@ -2285,6 +3210,7 @@ async function renderChatList() {
             document.createElement(
                 "div"
             );
+
 
         empty.className =
             "chat-list-empty";
@@ -2303,10 +3229,6 @@ async function renderChatList() {
     }
 
 
-    /*
-       CHAT ITEMS
-    */
-
     filteredChats.forEach(
         (chat) => {
 
@@ -2314,6 +3236,7 @@ async function renderChatList() {
                 document.createElement(
                     "div"
                 );
+
 
             item.className =
                 "chat-item";
@@ -2331,14 +3254,11 @@ async function renderChatList() {
             }
 
 
-            /*
-               CHAT CONTENT
-            */
-
             const content =
                 document.createElement(
                     "div"
                 );
+
 
             content.className =
                 "chat-item-content";
@@ -2349,8 +3269,10 @@ async function renderChatList() {
                     "div"
                 );
 
+
             title.className =
                 "chat-item-title";
+
 
             title.textContent =
                 chat.title ||
@@ -2361,6 +3283,7 @@ async function renderChatList() {
                 document.createElement(
                     "div"
                 );
+
 
             meta.className =
                 "chat-item-meta";
@@ -2384,28 +3307,29 @@ async function renderChatList() {
                 title
             );
 
+
             content.appendChild(
                 meta
             );
 
-
-            /*
-               DELETE BUTTON
-            */
 
             const deleteChatButton =
                 document.createElement(
                     "button"
                 );
 
+
             deleteChatButton.className =
                 "chat-delete";
+
 
             deleteChatButton.type =
                 "button";
 
+
             deleteChatButton.textContent =
                 "×";
+
 
             deleteChatButton.title =
                 "Delete chat";
@@ -2452,10 +3376,6 @@ async function renderChatList() {
             );
 
 
-            /*
-               OPEN CHAT
-            */
-
             item.addEventListener(
                 "click",
                 () => {
@@ -2470,6 +3390,7 @@ async function renderChatList() {
                 content
             );
 
+
             item.appendChild(
                 deleteChatButton
             );
@@ -2482,10 +3403,6 @@ async function renderChatList() {
         }
     );
 
-
-    /*
-       CHAT COUNT
-    */
 
     if (chatCount) {
 
@@ -2513,10 +3430,6 @@ async function openChat(
         chat.id;
 
 
-    /*
-       RESTORE IMAGES
-    */
-
     selectedFiles =
         [];
 
@@ -2527,38 +3440,32 @@ async function openChat(
     ) {
 
         selectedFiles =
-            chat.images.map(
-                (image) => {
+            chat.images
+                .slice(0, 2)
+                .map(
+                    (image) => {
 
-                    return new File(
-                        [image.blob],
-                        image.name,
-                        {
-                            type:
-                                image.type,
+                        return new File(
+                            [image.blob],
+                            image.name,
+                            {
+                                type:
+                                    image.type,
 
-                            lastModified:
-                                image.lastModified
-                        }
-                    );
+                                lastModified:
+                                    image.lastModified
+                            }
+                        );
 
-                }
-            );
+                    }
+                );
 
     }
 
 
-    /*
-       RESTORE QUESTIONS
-    */
-
     questionHistory =
         chat.messages || [];
 
-
-    /*
-       UPDATE UI
-    */
 
     updateImageSession();
 
@@ -2573,20 +3480,8 @@ async function openChat(
     }
 
 
-    /*
-       REBUILD CHAT
-    */
-
     questionHistory.forEach(
         (message) => {
-
-            /*
-               Old chats may not have
-               files saved in the message.
-
-               In that case use the
-               stored chat images.
-            */
 
             const restoredMessage = {
 
@@ -2609,7 +3504,8 @@ async function openChat(
 
 
             if (
-                message.answer
+                message.answer ||
+                message.routerResponse
             ) {
 
                 addAnswerMessage(
@@ -2621,10 +3517,6 @@ async function openChat(
         }
     );
 
-
-    /*
-       SHOW RESULT IF MESSAGES EXIST
-    */
 
     if (
         questionHistory.length > 0
@@ -2640,8 +3532,43 @@ async function openChat(
         );
 
 
-        resultStatus.textContent =
-            "COMPLETE";
+        const lastMessage =
+            questionHistory[
+                questionHistory.length - 1
+            ];
+
+
+        const lastStatus =
+            String(
+                lastMessage.status ||
+                "success"
+            ).toLowerCase();
+
+
+        if (
+            lastStatus === "failed"
+        ) {
+
+            resultStatus.textContent =
+                "ERROR";
+
+        }
+
+        else if (
+            lastStatus === "partial"
+        ) {
+
+            resultStatus.textContent =
+                "PARTIAL";
+
+        }
+
+        else {
+
+            resultStatus.textContent =
+                "COMPLETE";
+
+        }
 
 
         if (continueButton) {
@@ -2735,14 +3662,10 @@ async function initializeApp() {
 
         await openDatabase();
 
+
         const chats =
             await getAllChats();
 
-
-        /*
-           If previous chats exist,
-           don't automatically open one.
-        */
 
         if (
             chats.length === 0
@@ -2767,8 +3690,10 @@ async function initializeApp() {
             error
         );
 
+
         currentChatId =
             createChatId();
+
 
         updateImageSession();
 
