@@ -116,21 +116,37 @@ async function handlePreprocess(req, res) {
       processedSecond = await processImage(secondFile.path);
     }
 
-    // =========================================================
-    // STEP 5: Forward to Person D's Router (disabled by default)
-    // =========================================================
+    // Build structured image info objects for the router.
+    // These contain all the processed image details that Person D needs.
+    const mainImageInfo = {
+      filename: processedMain.filename,
+      path: processedMain.path,
+      format: processedMain.format,
+      width: processedMain.width,
+      height: processedMain.height,
+      sizeBytes: processedMain.sizeBytes,
+    };
+
+    const secondImageInfo = processedSecond
+      ? {
+          filename: processedSecond.filename,
+          path: processedSecond.path,
+          format: processedSecond.format,
+          width: processedSecond.width,
+          height: processedSecond.height,
+          sizeBytes: processedSecond.sizeBytes,
+        }
+      : null;
+
     const routerResult = await forwardToRouter(
-      processedMain.path,
       questionResult.question,
+      mainImageInfo,
+      secondImageInfo,
       {
         originalFormat: imageValidation.metadata.format,
         processedWidth: processedMain.width,
         processedHeight: processedMain.height,
-      },
-      // Pass the second processed image path when available (for change detection).
-      // When image2 was not uploaded, processedSecond is null → undefined is passed,
-      // which preserves existing single-image behavior in routerService.
-      processedSecond ? processedSecond.path : undefined
+      }
     );
 
     // =========================================================
@@ -149,6 +165,7 @@ async function handlePreprocess(req, res) {
       question: questionResult.question,
       processedImage: {
         filename: processedMain.filename,
+        path: processedMain.path,
         format: processedMain.format,
         width: processedMain.width,
         height: processedMain.height,
@@ -168,6 +185,7 @@ async function handlePreprocess(req, res) {
     if (processedSecond) {
       response.processedImage2 = {
         filename: processedSecond.filename,
+        path: processedSecond.path,
         format: processedSecond.format,
         width: processedSecond.width,
         height: processedSecond.height,

@@ -189,6 +189,27 @@ async function runAllTests() {
     assert(data.valid === true, `Expected valid=true, got ${data.valid}`);
     assert(data.processedImage.format === 'png', `Expected PNG output, got ${data.processedImage.format}`);
     assert(data.processedImage.wasResized === false, 'Image should NOT have been resized');
+    // Verify processedImage.path exists (Change 1)
+    assert(typeof data.processedImage.path === 'string' && data.processedImage.path.length > 0,
+      'processedImage.path should be a non-empty string');
+    // Verify router payload structure matches Person D's contract (Change 2)
+    const payload = data.router.payload;
+    assert(payload, 'router.payload should exist in stub mode');
+    assert(payload.question === 'Is there vegetation in this area?', 'payload.question should match');
+    // Verify payload.image has correct structure with size_bytes
+    assert(payload.image, 'payload.image should exist');
+    assert(payload.image.format === 'png', `payload.image.format should be "png", got "${payload.image.format}"`);
+    assert(typeof payload.image.path === 'string', 'payload.image.path should be a string');
+    assert(typeof payload.image.filename === 'string', 'payload.image.filename should be a string');
+    assert(payload.image.width === 800, `payload.image.width should be 800, got ${payload.image.width}`);
+    assert(payload.image.height === 600, `payload.image.height should be 600, got ${payload.image.height}`);
+    assert(typeof payload.image.size_bytes === 'number' && payload.image.size_bytes > 0,
+      `payload.image.size_bytes should be a positive number, got ${payload.image.size_bytes}`);
+    // Verify sizeBytes is NOT in the payload (it should be mapped to size_bytes)
+    assert(payload.image.sizeBytes === undefined,
+      'payload.image should use size_bytes, not sizeBytes');
+    // Verify image2 is null for single-image request
+    assert(payload.image2 === null, `payload.image2 should be null for single image, got ${JSON.stringify(payload.image2)}`);
   });
 
   // ------ Test 3: Valid PNG Upload ------
@@ -402,9 +423,15 @@ async function runAllTests() {
     // Main image should be preprocessed
     assert(data.processedImage, 'processedImage should exist');
     assert(data.processedImage.format === 'png', `Expected main image format "png", got "${data.processedImage.format}"`);
+    // Verify processedImage.path exists (Change 1)
+    assert(typeof data.processedImage.path === 'string' && data.processedImage.path.length > 0,
+      'processedImage.path should be a non-empty string');
     // Second image should also be preprocessed
     assert(data.processedImage2, 'processedImage2 should exist when image2 is uploaded');
     assert(data.processedImage2.format === 'png', `Expected second image format "png", got "${data.processedImage2.format}"`);
+    // Verify processedImage2.path exists (Change 1)
+    assert(typeof data.processedImage2.path === 'string' && data.processedImage2.path.length > 0,
+      'processedImage2.path should be a non-empty string');
     // Original image info for both should be present
     assert(data.originalImage, 'originalImage should exist');
     assert(data.originalImage2, 'originalImage2 should exist');
@@ -412,6 +439,24 @@ async function runAllTests() {
     // Router stub should confirm image2 was passed through
     assert(data.router.forwarded === false, 'Router should still be stubbed');
     assert(data.router.image2Included === true, 'Router stub should report image2Included=true');
+    // Verify router payload for image (Change 2)
+    const payload = data.router.payload;
+    assert(payload, 'router.payload should exist in stub mode');
+    assert(payload.question === 'What changed between these two images?', 'payload.question should match');
+    assert(payload.image, 'payload.image should exist');
+    assert(payload.image.format === 'png', 'payload.image.format should be "png"');
+    assert(typeof payload.image.size_bytes === 'number' && payload.image.size_bytes > 0,
+      'payload.image.size_bytes should be a positive number');
+    assert(payload.image.sizeBytes === undefined,
+      'payload.image should use size_bytes, not sizeBytes');
+    // Verify router payload for image2 (Change 2)
+    assert(payload.image2, 'payload.image2 should NOT be null when image2 is uploaded');
+    assert(payload.image2.format === 'png', 'payload.image2.format should be "png"');
+    assert(typeof payload.image2.path === 'string', 'payload.image2.path should be a string');
+    assert(typeof payload.image2.size_bytes === 'number' && payload.image2.size_bytes > 0,
+      'payload.image2.size_bytes should be a positive number');
+    assert(payload.image2.sizeBytes === undefined,
+      'payload.image2 should use size_bytes, not sizeBytes');
   });
 
   // ============================================================
