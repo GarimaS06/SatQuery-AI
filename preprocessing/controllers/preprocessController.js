@@ -113,8 +113,12 @@ async function handlePreprocess(req, res) {
     // =========================================================
     let processedSecond = null;
     if (secondFile && image2Validation && image2Validation.valid) {
-      processedSecond = await processImage(secondFile.path);
-    }
+  processedSecond = await processImage(
+    secondFile.path,
+    processedMain.width,
+    processedMain.height
+  );
+}
 
     // =========================================================
     // STEP 5: Forward to Person D's Router (disabled by default)
@@ -149,12 +153,13 @@ async function handlePreprocess(req, res) {
       question: questionResult.question,
       processedImage: {
         filename: processedMain.filename,
+        path: processedMain.path,
         format: processedMain.format,
         width: processedMain.width,
         height: processedMain.height,
         sizeBytes: processedMain.sizeBytes,
         wasResized: processedMain.wasResized,
-      },
+},
       originalImage: {
         filename: mainFile.originalname,
         format: imageValidation.metadata.format,
@@ -168,6 +173,7 @@ async function handlePreprocess(req, res) {
     if (processedSecond) {
       response.processedImage2 = {
         filename: processedSecond.filename,
+        path: processedSecond.path,
         format: processedSecond.format,
         width: processedSecond.width,
         height: processedSecond.height,

@@ -39,56 +39,65 @@ const PROCESSED_DIR = path.join(__dirname, '..', 'processed');
  *     wasResized: true
  *   }
  */
-async function processImage(inputFilePath) {
+async function processImage(inputFilePath, targetWidth = null, targetHeight = null) {
   // Read the max dimensions from environment variables, or use defaults
   const maxWidth = parseInt(process.env.MAX_IMAGE_WIDTH) || 2048;
   const maxHeight = parseInt(process.env.MAX_IMAGE_HEIGHT) || 2048;
 
-  // Step 1: Read the original image metadata to check its size
+  // Step 1: Read original image metadata
   const originalMetadata = await sharp(inputFilePath).metadata();
 
   // Step 2: Decide whether resizing is needed
-  const needsResize =
-    originalMetadata.width > maxWidth || originalMetadata.height > maxHeight;
+  let needsResize =
+    originalMetadata.width > maxWidth ||
+    originalMetadata.height > maxHeight;
+
+  // If a target size was explicitly provided, this is a paired-image
+  // request and the output must match that exact size.
+  const hasTargetSize =
+    Number.isInteger(targetWidth) &&
+    Number.isInteger(targetHeight) &&
+    targetWidth > 0 &&
+    targetHeight > 0;
 
   // Step 3: Build the Sharp processing pipeline
-  // Sharp uses a "pipeline" pattern — you chain operations and they
-  // all execute together efficiently when you call .toFile()
   let pipeline = sharp(inputFilePath);
 
-  if (needsResize) {
+  if (hasTargetSize) {
+    // Paired images must have identical dimensions for change detection.
+    pipeline = pipeline.resize(targetWidth, targetHeight, {
+      fit: 'fill',
+    });
+
+    needsResize =
+      originalMetadata.width !== targetWidth ||
+      originalMetadata.height !== targetHeight;
+  } else if (needsResize) {
+    // Normal single-image preprocessing
     pipeline = pipeline.resize(maxWidth, maxHeight, {
       fit: 'inside',
-      // "inside" means: fit the image inside a maxWidth × maxHeight box,
-      // preserving aspect ratio. The result will be ≤ maxWidth wide
-      // and ≤ maxHeight tall.
-
       withoutEnlargement: true,
-      // Safety net: even if we somehow get here with a small image,
-      // Sharp will NOT enlarge it.
     });
   }
 
-  // Step 4: Convert to PNG format
+  // Step 4: Convert output to PNG
   pipeline = pipeline.png();
 
-  // Step 5: Generate a unique filename and save
+  // Step 5: Generate unique filename and save
   const outputFilename = generateUniqueFilename('png');
   const outputPath = path.join(PROCESSED_DIR, outputFilename);
 
-  // .toFile() executes the pipeline and writes the result to disk.
-  // It returns an "info" object with the final image properties.
   const outputInfo = await pipeline.toFile(outputPath);
 
-  // Step 6: Return information about what we produced
+  // Step 6: Return processed image information
   return {
     filename: outputFilename,
     path: outputPath,
     format: 'png',
-    width: outputInfo.width,       // Actual width after processing
-    height: outputInfo.height,     // Actual height after processing
-    sizeBytes: outputInfo.size,    // File size in bytes
-    wasResized: needsResize,       // true if we had to shrink the image
+    width: outputInfo.width,
+    height: outputInfo.height,
+    sizeBytes: outputInfo.size,
+    wasResized: needsResize,
   };
 }
 
