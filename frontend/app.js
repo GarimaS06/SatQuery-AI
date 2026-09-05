@@ -43,9 +43,6 @@ const imageSession =
 const queryInput =
     document.getElementById("queryInput");
 
-const analysisOptions =
-    document.querySelectorAll(".analysis-option");
-
 const runButton =
     document.getElementById("runButton");
 
@@ -1233,43 +1230,10 @@ if (deleteButton) {
 
 /* =========================================
    OLD ANALYSIS OPTIONS
+   (buttons removed from the UI —
+   analysis type is now decided entirely
+   by the router from the question text)
    ========================================= */
-
-/*
-   Router decides the analysis type
-   from the question.
-
-   These old buttons are therefore
-   NOT sent to the backend.
-*/
-
-analysisOptions.forEach(
-    (option) => {
-
-        option.addEventListener(
-            "click",
-            () => {
-
-                analysisOptions.forEach(
-                    (item) => {
-
-                        item.classList.remove(
-                            "active"
-                        );
-
-                    }
-                );
-
-
-                option.classList.add(
-                    "active"
-                );
-
-            }
-        );
-
-    }
-);
 
 
 /* =========================================
