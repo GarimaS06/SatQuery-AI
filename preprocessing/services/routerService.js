@@ -2,64 +2,61 @@
  * routerService.js — Abstraction for Person D's Router integration
  *
  * ╔══════════════════════════════════════════════════════════════╗
+ * ║  THIS SERVICE IS DELIBERATELY STUBBED / DISABLED.           ║
+ * ║                                                              ║
  * ║  Person A does NOT decide which ML model to run.             ║
  * ║  Person D (Router) owns that responsibility.                 ║
+ * ║                                                              ║
+ * ║  When Person D confirms their API contract, update this      ║
+ * ║  file and set ROUTER_ENABLED=true in .env.                   ║
  * ╚══════════════════════════════════════════════════════════════╝
  *
- * CONFIRMED API CONTRACT (Person D):
- *   Endpoint: POST http://localhost:8000/api/router/analyze
- *   Content-Type: application/json
- *
- *   Request body:
- *   {
- *     question: "...",
- *     image: {                    ← always required
- *       filename, path, format,
- *       width, height, size_bytes
- *     },
- *     image2: {                   ← null when not provided
- *       filename, path, format,
- *       width, height, size_bytes
- *     },
- *     metadata: { ... }
- *   }
- *
- * FIELD MAPPING:
- *   Person A internally uses "sizeBytes" (camelCase).
- *   Person D expects "size_bytes" (snake_case).
- *   The conversion happens in this file at the A → D boundary.
- *
  * IMAGE SUPPORT:
- *   - Always sends the main processed image (image).
- *   - Optionally sends a second processed image (image2) when the
+ *   - Always sends the main processed image (imagePath).
+ *   - Optionally sends a second processed image (imagePath2) when the
  *     user uploads two images for change-detection workflows.
  *   - Person D decides whether to use one or both images.
+ *
+ * WHAT PERSON D NEEDS TO TELL US:
+ *   1. Exact endpoint URL (currently assumed: POST /api/router/analyze on port 8000)
+ *   2. Request format — how should we send the image(s)?
+ *      - Option A: multipart/form-data with the image file(s)
+ *      - Option B: JSON body with file path(s) on shared storage
+ *      - Option C: JSON body with base64-encoded image(s)
+ *   3. What other fields are needed? (question, metadata, etc.)
+ *   4. Response format — what does the router send back?
+ *
+ * Once we know this, we update the forwardToRouter() function below.
  */
 
 const axios = require('axios');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
 /**
- * Builds a Person-D-compatible image object from Person A's image info.
+ * Reads the actual processed image file from disk and constructs an ImageRef
+ * object adhering to Person D's Router contract.
  *
- * This is where the field-name mapping happens:
- *   Person A uses "sizeBytes" (camelCase, JavaScript convention)
- *   Person D expects "size_bytes" (snake_case, Python convention)
+ * Each image's metadata (format, width, height, size_bytes) is read
+ * independently from disk — nothing is assumed or copied from another image.
  *
- * @param {object} imageInfo - Processed image info from imageProcessor
- *   { filename, path, format, width, height, sizeBytes }
- * @returns {object} - Image object matching Person D's contract
+ * @param {string} imagePath - Absolute path to the processed image file
+ * @returns {Promise<object>} ImageRef matching Person D's schema:
  *   { filename, path, format, width, height, size_bytes }
  */
-function buildRouterImageObject(imageInfo) {
+async function buildImageRef(imagePath) {
+  const imageMetadata = await sharp(imagePath).metadata();
+  const stats = fs.statSync(imagePath);
+
   return {
-    filename: imageInfo.filename,
-    path: imageInfo.path,
-    format: imageInfo.format,
-    width: imageInfo.width,
-    height: imageInfo.height,
-    size_bytes: imageInfo.sizeBytes,  // ← camelCase → snake_case
+    filename: path.basename(imagePath),
+    path: imagePath,
+    format: imageMetadata.format,
+    width: imageMetadata.width,
+    height: imageMetadata.height,
+    size_bytes: stats.size,
   };
 }
 
@@ -67,51 +64,58 @@ function buildRouterImageObject(imageInfo) {
  * Forwards the processed image(s) and question to Person D's Router.
  *
  * When ROUTER_ENABLED is false (default), this returns a stub response
- * that includes the payload that WOULD be sent to Person D. This lets
- * tests verify the exact structure without needing Person D's server.
+ * indicating that the router is not yet connected. The preprocessing
+ * service works perfectly fine on its own — it validates and processes
+ * the image, and returns the result to the caller.
  *
- * When ROUTER_ENABLED is true, the payload is sent via HTTP POST to
- * Person D's router at ROUTER_URL.
- *
- * @param {string} question     - The user's validated question text
- * @param {object} imageInfo    - Main processed image info (required)
- *   { filename, path, format, width, height, sizeBytes }
- * @param {object|null} image2Info - Second processed image info (optional, for change detection)
- *   Same shape as imageInfo, or null when no second image was uploaded
- * @param {object} metadata     - Additional metadata (original format, etc.)
- * @returns {Promise<object>}   - Router response or stub response
+ * @param {string} processedImagePath       - Full path to the processed PNG image (required)
+ * @param {string} question                 - The user's validated question text
+ * @param {object} metadata                 - Image metadata (format, dimensions, etc.)
+ * @param {string} [processedImage2Path]    - Full path to the second processed PNG image (optional, for change detection)
+ * @returns {Promise<object>} - Router response or stub response
  */
-async function forwardToRouter(question, imageInfo, image2Info, metadata) {
+async function forwardToRouter(processedImagePath, question, metadata = {}, processedImage2Path) {
   // Check if router integration is enabled via environment variable
   const isEnabled = process.env.ROUTER_ENABLED === 'true';
   const routerUrl =
     process.env.ROUTER_URL || 'http://localhost:8000/api/router/analyze';
 
-  // Build the payload that matches Person D's confirmed API contract.
-  // We build it in both stub and live mode so the stub can echo it for testing.
+  // Read actual metadata independently from disk for each image
+  const image = await buildImageRef(processedImagePath);
+  const image2 = processedImage2Path
+    ? await buildImageRef(processedImage2Path)
+    : null;
+
+  // Format metadata strictly with snake_case field names (no camelCase)
+  const routerMetadata = {
+    original_format: metadata.originalFormat || metadata.original_format,
+    processed_width: metadata.processedWidth || metadata.processed_width,
+    processed_height: metadata.processedHeight || metadata.processed_height,
+  };
+
+  // Build the complete payload conforming to Person D's Router schema
   const payload = {
+    request_id: crypto.randomUUID(),
     question: question,
-    image: buildRouterImageObject(imageInfo),
-    image2: image2Info ? buildRouterImageObject(image2Info) : null,
-    metadata: metadata,
+    image: image,
+    image2: image2,
+    metadata: routerMetadata,
   };
 
   // ----- STUB MODE (default) -----
   // Return immediately without making any HTTP call.
-  // The "payload" field lets tests verify the exact data structure
-  // that would be sent to Person D.
+  // Include payload in the stub response so tests and consumers can verify the structure.
   if (!isEnabled) {
     return {
       forwarded: false,
       reason:
-        'Router integration is not yet enabled. Set ROUTER_ENABLED=true in .env when ready.',
-      image2Included: !!image2Info,
+        'Router integration is not yet enabled. Set ROUTER_ENABLED=true in .env when Person D confirms the API contract.',
+      image2Included: !!processedImage2Path,
       payload: payload,
     };
   }
 
-  // ----- LIVE MODE -----
-  // Send the payload to Person D's router via HTTP POST.
+  // ----- LIVE MODE (after Person D confirms) -----
   try {
     const response = await axios.post(routerUrl, payload, {
       timeout: 60000, // 60-second timeout (ML models can be slow)
