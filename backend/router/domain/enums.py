@@ -12,6 +12,7 @@ class TaskType(str, Enum):
     NDWI = "ndwi"
     NDBI = "ndbi"
     CHANGE_DETECTION = "change_detection"
+    CHANGEFORMER = "changeformer"
     VQA = "vqa"
     CAPTIONING = "captioning"
 

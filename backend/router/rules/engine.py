@@ -118,8 +118,9 @@ def _order_tasks(tasks: list[TaskType]) -> list[TaskType]:
     TaskType.NDWI: 1,
     TaskType.NDBI: 2,
     TaskType.CHANGE_DETECTION: 3,
-    TaskType.VQA: 4,
-    TaskType.CAPTIONING: 5,
+    TaskType.CHANGEFORMER: 4,
+    TaskType.VQA: 5,
+    TaskType.CAPTIONING: 6,
 }
 
     return sorted(tasks, key=lambda task: task_order[task])
@@ -133,6 +134,9 @@ def _intent_for_tasks(tasks: list[TaskType]) -> Intent:
         return Intent.QUESTION_ANSWER
 
     if TaskType.CHANGE_DETECTION in tasks:
+        return Intent.COMPARE
+
+    if TaskType.CHANGEFORMER in tasks:
         return Intent.COMPARE
 
     return Intent.ANALYZE
@@ -424,4 +428,9 @@ def validate_decision(
     if TaskType.CHANGE_DETECTION in decision.tasks and not has_image2:
         raise ValueError(
             "CHANGE_DETECTION requires a second image."
+        )
+
+    if TaskType.CHANGEFORMER in decision.tasks and not has_image2:
+        raise ValueError(
+            "CHANGEFORMER requires a second image."
         )
