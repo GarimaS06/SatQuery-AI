@@ -23,7 +23,7 @@ class VQATool:
 
             return ToolResult(
                 tool=self.name.value,
-                success=data.get("status") in {"success", "mock"},
+                success=data.get("status") in {"ready", "mock"},
                 output={
                     "answer": data.get("answer"),
                     "model_name": data.get("model_name"),

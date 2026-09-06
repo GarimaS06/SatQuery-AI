@@ -1,0 +1,1363 @@
+/* =========================================================
+   SATQUERY
+   COMPLETE FIXED CSS
+   ========================================================= */
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+html {
+    scroll-behavior: smooth;
+}
+
+
+body {
+    background: #000000;
+    color: #ffffff;
+
+    font-family: Arial, Helvetica, sans-serif;
+
+    overflow-x: hidden;
+
+    /*
+       IMPORTANT:
+       No mandatory scroll snapping.
+       The satellite animation must follow
+       the user's actual scroll continuously.
+    */
+    scroll-snap-type: none;
+}
+
+
+/* =========================================================
+   NAVBAR
+   ========================================================= */
+
+.navbar {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 90px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 6%;
+
+    z-index: 100;
+}
+
+/* =========================================
+   SATQUERY — PREMIUM LOGO
+   ========================================= */
+
+.logo {
+    position: relative;
+
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.4px;
+
+    color: rgba(255, 255, 255, 0.92);
+
+    cursor: default;
+
+    /* subtle depth */
+    text-shadow:
+        0 0 18px rgba(255, 255, 255, 0.08);
+
+    transition:
+        color 0.35s ease,
+        text-shadow 0.35s ease,
+        letter-spacing 0.35s ease;
+}
+
+
+/* Thin premium accent underneath */
+
+.logo::after {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    bottom: -7px;
+
+    width: 22px;
+    height: 1px;
+
+    background: rgba(255, 255, 255, 0.65);
+
+    transform-origin: left;
+
+    transition:
+        width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.35s ease;
+}
+
+
+/* Hover */
+
+.logo:hover {
+    color: #ffffff;
+
+    letter-spacing: 0px;
+
+    text-shadow:
+        0 0 20px rgba(255, 255, 255, 0.16);
+}
+
+
+.logo:hover::after {
+    width: 100%;
+
+    opacity: 0.9;
+}
+
+
+/* =========================================
+   GLASSY NAVBAR BUTTONS
+   ========================================= */
+
+.nav-links a {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 9px 16px;
+
+    border-radius: 999px;
+
+    text-decoration: none;
+
+    color: rgba(255, 255, 255, 0.68);
+
+    font-size: 12px;
+    font-weight: 400;
+
+    background: rgba(255, 255, 255, 0.055);
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 4px 20px rgba(0, 0, 0, 0.25);
+
+    overflow: hidden;
+
+    transition:
+        color 0.35s ease,
+        background 0.35s ease,
+        border-color 0.35s ease,
+        box-shadow 0.35s ease,
+        transform 0.35s cubic-bezier(.2,.8,.2,1);
+}
+
+
+/* subtle glass highlight */
+
+.nav-links a::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            120deg,
+            transparent 20%,
+            rgba(255,255,255,0.10) 50%,
+            transparent 80%
+        );
+
+    transform: translateX(-120%);
+
+    transition: transform 0.6s ease;
+
+    pointer-events: none;
+}
+
+
+/* hover */
+
+.nav-links a:hover {
+
+    color: rgba(255, 255, 255, 0.95);
+
+    background: rgba(255, 255, 255, 0.10);
+
+    border-color: rgba(255, 255, 255, 0.22);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        0 6px 25px rgba(255, 255, 255, 0.05);
+
+    transform: translateY(-1px);
+}
+
+
+/* glass shine passes across button */
+
+.nav-links a:hover::before {
+    transform: translateX(120%);
+}
+
+
+/* click / press */
+
+.nav-links a:active {
+    transform: scale(0.96);
+
+    background: rgba(255, 255, 255, 0.13);
+
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+
+/* =========================================
+   GLASSY GET STARTED BUTTON
+   ========================================= */
+
+.get-started {
+    position: relative;
+
+    padding: 9px 17px;
+
+    border-radius: 999px;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    background: rgba(255, 255, 255, 0.055);
+
+    color: rgba(255, 255, 255, 0.72);
+
+    font-size: 12px;
+
+    cursor: pointer;
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 4px 20px rgba(0, 0, 0, 0.25);
+
+    transition:
+        color 0.35s ease,
+        background 0.35s ease,
+        border-color 0.35s ease,
+        box-shadow 0.35s ease,
+        transform 0.35s cubic-bezier(.2,.8,.2,1);
+}
+
+
+.get-started:hover {
+    color: rgba(255, 255, 255, 0.95);
+
+    background: rgba(255, 255, 255, 0.10);
+
+    border-color: rgba(255, 255, 255, 0.22);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        0 6px 25px rgba(255, 255, 255, 0.05);
+
+    transform: translateY(-1px);
+}
+
+
+.get-started:active {
+    transform: scale(0.96);
+
+    background: rgba(255, 255, 255, 0.13);
+}
+
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
+.hero {
+    position: relative;
+
+    min-height: 100vh;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 120px 8% 80px;
+
+    overflow: hidden;
+
+    /*
+       No snap.
+       This allows the transition to begin
+       while scrolling toward page two.
+    */
+    scroll-snap-align: none;
+}
+
+
+.hero-content {
+    width: 48%;
+
+    max-width: 800px;
+
+    position: relative;
+
+    z-index: 10;
+}
+
+
+.label,
+.section-label {
+    font-size: 11px;
+
+    letter-spacing: 3px;
+
+    color: rgba(255, 255, 255, 0.35);
+
+    margin-bottom: 25px;
+}
+
+
+/* =========================================================
+   HERO HEADING
+   ========================================================= */
+
+.hero h1 {
+    font-size: clamp(45px, 6vw, 80px);
+
+    font-weight: 500;
+
+    line-height: 1.05;
+
+    letter-spacing: -3px;
+
+    color: rgba(255, 255, 255, 0.9);
+}
+
+
+.hero-description {
+    margin-top: 30px;
+
+    font-size: 14px;
+
+    line-height: 1.7;
+
+    color: rgba(255, 255, 255, 0.45);
+}
+
+
+/* =========================================================
+   PROFESSIONAL GLASS BUTTONS
+   ========================================================= */
+
+.launch-button,
+.get-started {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.28);
+
+    background: rgba(255, 255, 255, 0.035);
+
+    color: rgba(255, 255, 255, 0.9);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    cursor: pointer;
+
+    overflow: hidden;
+
+    transition:
+        background 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        border-color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+
+/* =========================================================
+   LAUNCH BUTTON
+   ========================================================= */
+
+.launch-button {
+
+    margin-top: 25px;
+
+    min-width: 180px;
+    height: 52px;
+
+    padding: 0 28px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+    font-weight: 500;
+
+    letter-spacing: 0.2px;
+}
+
+
+/* =========================================================
+   GET STARTED
+   ========================================================= */
+
+.get-started {
+
+    min-width: 105px;
+    height: 38px;
+
+    padding: 0 18px;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   GLASS SHINE
+   ========================================================= */
+
+.launch-button::before,
+.get-started::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: -120%;
+
+    width: 80%;
+    height: 100%;
+
+    background: linear-gradient(
+        110deg,
+        transparent,
+        rgba(255,255,255,0.10),
+        transparent
+    );
+
+    transform: skewX(-20deg);
+
+    transition: left 0.7s ease;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   HOVER
+   ========================================================= */
+
+.launch-button:hover,
+.get-started:hover {
+
+    background: rgba(255, 255, 255, 0.10);
+
+    border-color: rgba(255, 255, 255, 0.65);
+
+    box-shadow:
+        0 0 25px rgba(255, 255, 255, 0.06),
+        inset 0 0 18px rgba(255, 255, 255, 0.035);
+
+    transform: translateY(-2px);
+}
+
+
+.launch-button:hover::before,
+.get-started:hover::before {
+
+    left: 140%;
+}
+
+
+/* =========================================================
+   CLICK / PRESS
+   ========================================================= */
+
+.launch-button:active,
+.get-started:active {
+
+    transform: translateY(0) scale(0.97);
+
+    background: rgba(255, 255, 255, 0.075);
+
+    border-color: rgba(255, 255, 255, 0.55);
+
+    box-shadow:
+        inset 0 0 20px rgba(255, 255, 255, 0.06);
+}
+
+
+/* =========================================================
+   IMPORTANT:
+   REMOVE THE OLD WHITE BUTTON STYLE
+   ========================================================= */
+
+/*
+.launch-button {
+    background: #ffffff;
+    color: #000000;
+}
+
+.launch-button:hover {
+    transform: translateY(-2px);
+}
+*/
+
+.hero-note {
+    margin-top: 10px;
+
+    font-size: 10px;
+
+    color: rgba(255, 255, 255, 0.3);
+}
+
+
+/* =========================================================
+   HERO SATELLITE
+   ========================================================= */
+
+.satellite-container {
+
+    position: absolute;
+
+    width: 45%;
+
+    max-width: 700px;
+
+    right: 5%;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    z-index: 20;
+
+    pointer-events: none;
+}
+
+
+.satellite-image {
+
+    width: 100%;
+
+    height: auto;
+
+    display: block;
+
+    position: relative;
+
+    z-index: 2;
+
+    opacity: 1;
+
+    visibility: visible;
+
+    /*
+       VERY IMPORTANT:
+       No CSS floating animation here.
+
+       JavaScript controls transform during scroll.
+       If we kept the old satelliteFloat animation,
+       both animations would fight each other.
+    */
+    animation: none;
+
+    transform-origin: center center;
+
+    will-change:
+        transform,
+        opacity;
+
+    backface-visibility: hidden;
+}
+
+
+/* =========================================================
+   SECOND PAGE
+   ========================================================= */
+
+.section-two {
+
+    position: relative;
+
+    min-height: 100vh;
+
+    overflow: hidden;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    padding: 10% 8%;
+
+    background: #000000;
+
+    scroll-snap-align: none;
+}
+
+
+/* =========================================================
+   SECOND PAGE TEXT
+   ========================================================= */
+
+.section-two-content {
+
+    position: relative;
+
+    width: 50%;
+
+    z-index: 10;
+}
+
+
+.section-two h2,
+.analysis-header h2,
+.workflow-header h2,
+.cta-section h2 {
+
+    font-size: clamp(45px, 6vw, 80px);
+
+    font-weight: 500;
+
+    line-height: 1.05;
+
+    letter-spacing: -3px;
+
+    color: rgba(255, 255, 255, 0.88);
+}
+
+
+.section-description {
+
+    max-width: 520px;
+
+    margin-top: 30px;
+
+    font-size: 15px;
+
+    line-height: 1.8;
+
+    color: rgba(255, 255, 255, 0.45);
+}
+
+
+/* =========================================================
+   PHASE 2 SATELLITE
+   ========================================================= */
+
+.phase-two-satellite {
+
+    position: absolute;
+
+    width: 48%;
+
+    max-width: 720px;
+
+    right: 3%;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    z-index: 5;
+
+    pointer-events: none;
+
+    /*
+       Prevents the image from causing
+       accidental layout movement.
+    */
+    user-select: none;
+}
+
+
+/* =========================================================
+   PHASE 2 ASSEMBLED IMAGE
+   ========================================================= */
+
+.phase-two-assembled {
+
+    width: 100%;
+
+    height: auto;
+
+    display: block;
+
+    position: relative;
+
+    z-index: 2;
+
+    /*
+       Hidden because the ORIGINAL hero satellite
+       is the one transforming into the exploded one.
+
+       This prevents TWO assembled satellites
+       appearing on page two.
+    */
+    opacity: 0;
+
+    visibility: hidden;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   PHASE 2 EXPLODED IMAGE
+   ========================================================= */
+
+.phase-two-exploded {
+
+    width: 100%;
+
+    height: auto;
+
+    display: block;
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    z-index: 3;
+
+    /*
+       JavaScript changes this from 0 → 1
+       according to scroll position.
+    */
+    opacity: 0;
+
+    transform: scale(0.92);
+
+    transform-origin: center center;
+
+    will-change:
+        transform,
+        opacity;
+
+    pointer-events: none;
+
+    user-select: none;
+
+    backface-visibility: hidden;
+}
+
+
+/* =========================================================
+   ANALYSIS
+   ========================================================= */
+
+.analysis-section {
+
+    min-height: 100vh;
+
+    padding: 12vh 8%;
+
+    background: #000000;
+
+    scroll-snap-align: none;
+}
+
+
+.analysis-header {
+
+    width: 55%;
+
+    margin-left: auto;
+
+    margin-right: 0;
+
+    text-align: right;
+}
+
+
+.analysis-header p {
+
+    max-width: 520px;
+
+    margin-top: 25px;
+
+    margin-left: auto;
+
+    font-size: 14px;
+
+    line-height: 1.8;
+
+    color: rgba(255, 255, 255, 0.42);
+}
+
+
+.analysis-grid {
+
+    margin-top: 80px;
+
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 1px;
+
+    background: rgba(255, 255, 255, 0.1);
+}
+
+
+.analysis-card {
+
+    min-height: 260px;
+
+    padding: 35px;
+
+    background: #000000;
+
+    transition:
+        background 0.3s ease;
+}
+
+
+.analysis-card:hover {
+
+    background: #080808;
+}
+
+
+.card-number {
+
+    display: block;
+
+    font-size: 10px;
+
+    letter-spacing: 2px;
+
+    color: rgba(255, 255, 255, 0.25);
+
+    margin-bottom: 70px;
+}
+
+
+.analysis-card h3 {
+
+    font-size: 24px;
+
+    font-weight: 400;
+}
+
+
+.analysis-card p {
+
+    max-width: 360px;
+
+    margin-top: 12px;
+
+    font-size: 13px;
+
+    line-height: 1.7;
+
+    color: rgba(255, 255, 255, 0.38);
+}
+
+
+/* =========================================================
+   WORKFLOW
+   ========================================================= */
+
+.workflow-section {
+
+    min-height: 100vh;
+
+    padding: 12vh 8%;
+
+    background: #000000;
+
+    scroll-snap-align: none;
+}
+
+
+.workflow-header {
+
+    max-width: 700px;
+}
+
+
+.workflow-header p {
+
+    max-width: 520px;
+
+    margin-top: 25px;
+
+    font-size: 14px;
+
+    line-height: 1.8;
+
+    color: rgba(255, 255, 255, 0.42);
+}
+
+
+.workflow {
+
+    margin-top: 90px;
+
+    display: flex;
+
+    align-items: flex-start;
+}
+
+
+.workflow-step {
+
+    flex: 1;
+
+    padding-right: 25px;
+}
+
+
+.workflow-step span {
+
+    display: block;
+
+    font-size: 10px;
+
+    letter-spacing: 2px;
+
+    color: rgba(255, 255, 255, 0.25);
+
+    margin-bottom: 35px;
+}
+
+
+.workflow-step h3 {
+
+    font-size: 22px;
+
+    font-weight: 400;
+}
+
+
+.workflow-step p {
+
+    max-width: 220px;
+
+    margin-top: 14px;
+
+    font-size: 13px;
+
+    line-height: 1.7;
+
+    color: rgba(255, 255, 255, 0.38);
+}
+
+
+.workflow-line {
+
+    width: 70px;
+
+    height: 1px;
+
+    margin-top: 5px;
+
+    flex-shrink: 0;
+
+    background: rgba(255, 255, 255, 0.15);
+}
+
+
+/* =========================================================
+   CTA
+   ========================================================= */
+
+.cta-section {
+
+    min-height: 80vh;
+
+    display: none;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 12vh 8%;
+
+    background: #000000;
+
+    scroll-snap-align: none;
+}
+
+
+.cta-section p {
+
+    margin-top: 25px;
+
+    font-size: 14px;
+
+    color: rgba(255, 255, 255, 0.42);
+}
+
+
+.cta-button {
+
+    margin-top: 30px;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+
+    /* NAV */
+
+    .nav-links {
+
+        display: none;
+    }
+
+
+    /* HERO */
+
+    .hero {
+
+        padding-left: 6%;
+
+        padding-right: 6%;
+    }
+
+
+    .hero-content {
+
+        width: 100%;
+    }
+
+
+    .satellite-container {
+
+        width: 60%;
+
+        right: -5%;
+
+        top: 65%;
+    }
+
+
+    /* SECOND PAGE */
+
+    .section-two {
+
+        padding-left: 6%;
+
+        padding-right: 6%;
+    }
+
+
+    .section-two-content {
+
+        width: 100%;
+    }
+
+
+    .phase-two-satellite {
+
+        width: 65%;
+
+        right: -5%;
+
+        top: 65%;
+    }
+
+
+    /* ANALYSIS */
+
+    .analysis-header {
+
+        width: 100%;
+
+        text-align: left;
+    }
+
+
+    .analysis-header p {
+
+        margin-left: 0;
+    }
+
+
+    .analysis-grid {
+
+        grid-template-columns: 1fr;
+    }
+
+
+    /* WORKFLOW */
+
+    .workflow {
+
+        flex-direction: column;
+
+        gap: 50px;
+    }
+
+
+    .workflow-line {
+
+        display: none;
+    }
+
+
+    .workflow-section {
+
+        display: none;
+    }
+
+}
+/* =========================================
+   EXPLODED SATELLITE - FINAL FLOAT
+   ========================================= */
+
+.phase-two-exploded.float-final {
+    animation: explodedSatelliteFloat 4s ease-in-out infinite;
+}
+
+
+/* Gentle continuous floating after explosion */
+
+@keyframes explodedSatelliteFloat {
+
+    0% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-12px) scale(1);
+    }
+
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+}
+/* =========================
+   HIDE ANALYSIS SECTION
+   ========================= */
+
+.analysis-section {
+    display: none !important;
+}
+
+/* Hide its navbar button too */
+.nav-links a[href="#solutions"] {
+    display: none;
+}
+/* =========================
+   THIRD PAGE - CENTERED
+   ========================= */
+
+.workflow-section {
+    min-height: 100vh;
+
+    padding: 12vh 8%;
+
+    background: #000000;
+
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+
+/* CENTER THE "ASK A QUESTION" CONTENT */
+
+.workflow-header {
+    width: 100%;
+    max-width: 900px;
+
+    margin: 0 auto;
+
+    text-align: center;
+}
+
+.workflow-header .section-label {
+    text-align: center;
+}
+
+.workflow-header h2 {
+    text-align: center;
+}
+
+.workflow-header p {
+    max-width: 600px;
+
+    margin: 25px auto 0;
+
+    text-align: center;
+
+    font-size: 14px;
+
+    line-height: 1.8;
+
+    color: rgba(255,255,255,0.42);
+}
+
+
+/* WORKFLOW STEPS */
+
+.workflow {
+    width: 100%;
+    max-width: 1200px;
+
+    margin: 90px auto 0;
+
+    display: flex;
+
+    align-items: flex-start;
+}
+/* =========================================
+   EFFECT 1 - SUBTLE SPACE PARTICLES
+   ========================================= */
+
+.hero::before,
+.section-two::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    z-index: 1;
+
+    background-image:
+        radial-gradient(circle, rgba(255,255,255,0.22) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255,255,255,0.14) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255,255,255,0.10) 1px, transparent 1px);
+
+    background-size:
+        180px 180px,
+        260px 260px,
+        340px 340px;
+
+    background-position:
+        20px 40px,
+        120px 100px,
+        60px 180px;
+
+    opacity: 0.35;
+}
+/* =========================================
+   SUBTLE SPACE PARTICLES
+   ========================================= */
+
+body::before {
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    pointer-events: none;
+
+    z-index: 0;
+
+    background-image:
+        radial-gradient(circle, rgba(255,255,255,0.35) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px);
+
+    background-size:
+        140px 140px,
+        220px 220px;
+
+    background-position:
+        20px 30px,
+        90px 120px;
+
+    opacity: 0.16;
+}
+
+
+/* Keep website content above particles */
+
+.navbar,
+main {
+    position: relative;
+    z-index: 1;
+}
+/* =========================================
+   SATQUERY - TECHNICAL HUD DETAIL
+   ========================================= */
+
+.phase-two-satellite::after {
+    content: "";
+
+    position: absolute;
+
+    width: 55px;
+    height: 1px;
+
+    right: 8%;
+    top: 45%;
+
+    background: rgba(255,255,255,0.18);
+
+    box-shadow:
+        0 0 8px rgba(255,255,255,0.12);
+
+    opacity: 0;
+
+    transition: opacity 0.6s ease;
+}
+
+
+/* Activate after explosion */
+
+.phase-two-satellite:has(.phase-two-exploded.float-final)::after {
+    opacity: 1;
+}
+.launch-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+.launch-button {
+    cursor: pointer;
+}
+

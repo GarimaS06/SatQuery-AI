@@ -1,0 +1,2388 @@
+/* =========================================
+   SATQUERY AI — APPLICATION PAGE
+   ========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    background: #080808;
+    color: #f2f2f2;
+    font-family: Arial, Helvetica, sans-serif;
+    overflow: hidden;
+}
+
+
+/* =========================================
+   NAVBAR
+   ========================================= */
+
+.app-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 58px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 4.5%;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+    z-index: 100;
+}
+
+.app-logo {
+    color: #ffffff;
+    text-decoration: none;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    letter-spacing: -0.2px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.3s ease,
+        opacity 0.3s ease;
+}
+
+.app-logo:hover {
+    opacity: 0.7;
+    transform: translateY(-2px);
+}
+
+
+/* NAVIGATION */
+
+.app-nav {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+/* =========================================
+   PROJECTS + EXPORT
+   SAME SATQUERY GLASS STYLE
+   ========================================= */
+
+.app-nav a {
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 72px;
+    height: 32px;
+
+    padding: 0 14px;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    border-radius: 30px;
+
+    background: rgba(255, 255, 255, 0.025);
+
+    color: rgba(255, 255, 255, 0.58);
+
+    text-decoration: none;
+
+    font-size: 10px;
+    font-weight: 400;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        border-color 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+
+.app-nav a:hover {
+
+    transform: translateY(-2px);
+
+    background: rgba(255, 255, 255, 0.065);
+
+    border-color:
+        rgba(255, 255, 255, 0.25);
+
+    color: #ffffff;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        0 6px 18px rgba(255, 255, 255, 0.025);
+}
+
+
+.app-nav a:active {
+
+    transform: translateY(0);
+
+}
+
+/* =========================================
+   MAIN
+   ========================================= */
+
+.app-main {
+    width: 100%;
+    height: 100vh;
+
+    display: flex;
+}
+
+
+/* =========================================
+   CHAT SIDEBAR
+   ========================================= */
+
+.chat-sidebar {
+    position: relative;
+
+    width: 230px;
+    height: 100vh;
+
+    flex-shrink: 0;
+
+    padding-top: 58px;
+
+    background: #070707;
+
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+
+    display: flex;
+    flex-direction: column;
+
+    z-index: 30;
+}
+
+
+/* SIDEBAR HEADER */
+
+.sidebar-header {
+    height: 58px;
+
+    padding: 0 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-title {
+    color: rgba(255, 255, 255, 0.35);
+
+    font-size: 9px;
+
+    letter-spacing: 2.5px;
+
+    font-weight: 600;
+}
+
+
+/* NEW CHAT */
+
+.new-chat-button {
+    width: 28px;
+    height: 28px;
+
+    border: 1px solid rgba(255, 255, 255, 0.14);
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.035);
+
+    color: rgba(255, 255, 255, 0.65);
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        border-color 0.3s ease;
+}
+
+.new-chat-button:hover {
+    transform: translateY(-2px);
+
+    background: rgba(255, 255, 255, 0.09);
+
+    border-color: rgba(255, 255, 255, 0.25);
+
+    color: #ffffff;
+}
+
+.new-chat-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   SEARCH
+   ========================================= */
+
+.chat-search {
+    padding: 0 12px 12px;
+}
+
+.chat-search input {
+    width: 100%;
+    height: 32px;
+
+    padding: 0 10px;
+
+    border: 1px solid rgba(255, 255, 255, 0.10);
+
+    border-radius: 6px;
+
+    outline: none;
+
+    background: rgba(255, 255, 255, 0.025);
+
+    color: #ffffff;
+
+    font-size: 9px;
+}
+
+.chat-search input::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.chat-search input:focus {
+    border-color: rgba(255, 255, 255, 0.24);
+}
+
+
+/* =========================================
+   CHAT LIST
+   ========================================= */
+
+.chat-list {
+    flex: 1;
+
+    overflow-y: auto;
+
+    padding: 4px 8px;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        rgba(255, 255, 255, 0.14)
+        transparent;
+}
+
+.chat-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.chat-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14);
+
+    border-radius: 10px;
+}
+
+
+/* CHAT ITEM */
+
+.chat-item {
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    width: 100%;
+
+    min-height: 54px;
+
+    margin-bottom: 3px;
+
+    padding: 8px 7px 8px 10px;
+
+    border: 1px solid transparent;
+
+    border-radius: 7px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.chat-item:hover {
+    background: rgba(255, 255, 255, 0.035);
+
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+.chat-item.active {
+    background: rgba(255, 255, 255, 0.06);
+
+    border-color: rgba(255, 255, 255, 0.11);
+}
+
+
+/* CHAT CONTENT */
+
+.chat-item-content {
+    min-width: 0;
+
+    flex: 1;
+}
+
+.chat-item-title {
+    color: rgba(255, 255, 255, 0.70);
+
+    font-size: 10px;
+
+    line-height: 1.4;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+.chat-item.active .chat-item-title {
+    color: #ffffff;
+}
+
+.chat-item-meta {
+    margin-top: 4px;
+
+    color: rgba(255, 255, 255, 0.25);
+
+    font-size: 8px;
+}
+
+
+/* DELETE CHAT */
+
+.chat-delete-button {
+    width: 22px;
+    height: 22px;
+
+    flex-shrink: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: rgba(255, 255, 255, 0.28);
+
+    font-size: 14px;
+
+    cursor: pointer;
+
+    opacity: 0;
+
+    transition:
+        transform 0.3s ease,
+        opacity 0.2s ease,
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.chat-item:hover .chat-delete-button {
+    opacity: 1;
+}
+
+.chat-delete-button:hover {
+    background: rgba(255, 255, 255, 0.10);
+
+    color: #ffffff;
+
+    transform: translateY(-2px);
+}
+
+.chat-delete-button:active {
+    transform: translateY(0);
+}
+
+
+/* EMPTY */
+
+.chat-list-empty {
+    padding: 28px 10px;
+
+    text-align: center;
+
+    color: rgba(255, 255, 255, 0.22);
+
+    font-size: 9px;
+
+    line-height: 1.5;
+}
+
+
+/* SIDEBAR FOOTER */
+
+.sidebar-footer {
+    height: 38px;
+
+    padding: 0 14px;
+
+    display: flex;
+    align-items: center;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+    color: rgba(255, 255, 255, 0.22);
+
+    font-size: 8px;
+}
+
+
+/* =========================================
+   LEFT CONTROL PANEL
+   ========================================= */
+
+.control-panel {
+    position: relative;
+
+    width: 40%;
+
+    flex: 0 0 40%;
+
+    height: 100vh;
+
+    display: flex;
+    align-items: center;
+
+    background: #080808;
+
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+
+    z-index: 10;
+}
+
+.control-content {
+    width: 100%;
+    max-width: 560px;
+
+    margin-left: 10%;
+    margin-top: 35px;
+}
+
+
+/* =========================================
+   SECTION LABEL
+   ========================================= */
+
+.section-label {
+    margin-bottom: 26px;
+
+    color: rgba(255, 255, 255, 0.38);
+
+    font-size: 10px;
+    font-weight: 600;
+
+    letter-spacing: 3px;
+}
+
+
+/* =========================================
+   HEADING
+   ========================================= */
+
+.control-content h1 {
+    margin-bottom: 25px;
+
+    color: rgba(255, 255, 255, 0.92);
+
+    font-size: clamp(42px, 4.4vw, 68px);
+
+    font-weight: 400;
+
+    line-height: 0.98;
+
+    letter-spacing: -3px;
+}
+
+
+/* =========================================
+   DESCRIPTION
+   ========================================= */
+
+.description {
+    max-width: 390px;
+
+    margin-bottom: 28px;
+
+    color: rgba(255, 255, 255, 0.48);
+
+    font-size: 14px;
+
+    line-height: 1.45;
+}
+
+
+/* =========================================
+   UPLOAD BUTTON
+   ========================================= */
+
+.upload-button {
+    width: 150px;
+    height: 38px;
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    border-radius: 30px;
+
+    background: rgba(255, 255, 255, 0.92);
+
+    color: #111111;
+
+    font-size: 11px;
+    font-weight: 500;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 18px rgba(255, 255, 255, 0.025);
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.upload-button:hover {
+    background: rgba(255, 255, 255, 0.98);
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 7px 24px rgba(255, 255, 255, 0.06);
+}
+
+.upload-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   DELETE IMAGES
+   ========================================= */
+
+.delete-button {
+    display: none;
+
+    width: 150px;
+    height: 38px;
+
+    margin-top: 10px;
+
+    border: 1px solid rgba(255, 255, 255, 0.14);
+
+    border-radius: 30px;
+
+    background: rgba(255, 255, 255, 0.045);
+
+    color: rgba(255, 255, 255, 0.68);
+
+    font-size: 11px;
+    font-weight: 500;
+
+    cursor: pointer;
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.delete-button.visible {
+    display: block;
+}
+
+.delete-button:hover {
+    background: rgba(255, 255, 255, 0.09);
+
+    color: #ffffff;
+
+    border-color: rgba(255, 255, 255, 0.24);
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 7px 20px rgba(255, 255, 255, 0.025);
+}
+
+.delete-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   FILE NAME
+   ========================================= */
+
+.file-name {
+    width: 400px;
+    max-width: 100%;
+
+    margin-top: 8px;
+
+    color: rgba(255, 255, 255, 0.35);
+
+    font-size: 10px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================
+   IMAGE SESSION
+   ========================================= */
+
+.image-session {
+    display: none;
+
+    max-width: 400px;
+
+    margin-top: 8px;
+
+    color: rgba(255, 255, 255, 0.30);
+
+    font-size: 9px;
+
+    letter-spacing: 0.3px;
+}
+
+.image-session.active {
+    display: block;
+}
+
+
+/* =========================================
+   QUERY INPUT
+   ========================================= */
+
+.query-input {
+    display: block;
+
+    width: 100%;
+    max-width: 400px;
+
+    height: 40px;
+
+    margin-top: 17px;
+
+    padding: 0 14px;
+
+    border: 1px solid rgba(255, 255, 255, 0.22);
+
+    border-radius: 8px;
+
+    outline: none;
+
+    background: rgba(255, 255, 255, 0.025);
+
+    color: #ffffff;
+
+    font-size: 12px;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.query-input::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.query-input:focus {
+    border-color: rgba(255, 255, 255, 0.55);
+
+    background: rgba(255, 255, 255, 0.04);
+}
+
+
+/* =========================================
+   ANALYSIS OPTIONS
+   ========================================= */
+
+.analysis-options {
+    width: 100%;
+    max-width: 400px;
+
+    min-height: 36px;
+
+    margin-top: 13px;
+
+    padding: 3px;
+
+    display: flex;
+    align-items: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.14);
+
+    border-radius: 18px;
+
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.analysis-option {
+    flex: 1;
+
+    min-width: 0;
+
+    height: 28px;
+
+    padding: 0 5px;
+
+    border: none;
+
+    border-radius: 15px;
+
+    background: transparent;
+
+    color: rgba(255, 255, 255, 0.48);
+
+    font-size: 11px;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.analysis-option span {
+    width: 12px;
+    height: 12px;
+
+    flex-shrink: 0;
+
+    border: 1px solid rgba(255, 255, 255, 0.28);
+
+    border-radius: 50%;
+}
+
+.analysis-option.active {
+    background: rgba(255, 255, 255, 0.18);
+
+    color: #ffffff;
+}
+
+.analysis-option.active span {
+    border-color: rgba(255, 255, 255, 0.7);
+
+    box-shadow:
+        inset 0 0 0 3px #111111;
+}
+
+.analysis-option:active {
+    transform: scale(0.98);
+}
+
+
+/* =========================================
+   RUN ANALYSIS
+   ========================================= */
+
+.run-button {
+    position: relative;
+
+    display: block;
+
+    width: 100%;
+    max-width: 400px;
+
+    height: 40px;
+
+    margin-top: 17px;
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    border-radius: 30px;
+
+    background: rgba(255, 255, 255, 0.92);
+
+    color: #111111;
+
+    font-size: 11px;
+    font-weight: 500;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 18px rgba(255, 255, 255, 0.025);
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        box-shadow 0.3s ease,
+        opacity 0.3s ease;
+}
+
+.run-button:hover {
+    background: rgba(255, 255, 255, 0.98);
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 7px 24px rgba(255, 255, 255, 0.06);
+}
+
+.run-button:active {
+    transform: translateY(0);
+}
+
+.run-button:disabled {
+    cursor: wait;
+
+    opacity: 0.7;
+
+    transform: none;
+}
+
+
+/* =========================================
+   LOADING
+   ========================================= */
+
+.loading-circle {
+    display: inline-block;
+
+    width: 11px;
+    height: 11px;
+
+    margin-left: 5px;
+
+    border: 1px solid rgba(0, 0, 0, 0.25);
+
+    border-top-color: #000000;
+
+    border-radius: 50%;
+
+    vertical-align: -2px;
+
+    opacity: 0;
+}
+
+.loading-circle.loading {
+    opacity: 1;
+
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+/* =========================================
+   LEFT CONTINUE BUTTON
+   ========================================= */
+
+.continue-button {
+    display: none;
+
+    width: 100%;
+    max-width: 400px;
+
+    height: 36px;
+
+    margin-top: 10px;
+
+    border: 1px solid rgba(255, 255, 255, 0.10);
+
+    border-radius: 30px;
+
+    background: rgba(255, 255, 255, 0.92);
+
+    color: #111111;
+
+    font-size: 10px;
+
+    cursor: pointer;
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    box-shadow:
+        0 4px 18px rgba(255, 255, 255, 0.025);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.continue-button.visible {
+    display: block;
+}
+
+.continue-button:hover {
+    background: rgba(255, 255, 255, 0.98);
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 7px 24px rgba(255, 255, 255, 0.06);
+}
+
+.continue-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   CLEAR CHAT LEFT
+   ========================================= */
+
+.clear-chat-button {
+    display: none;
+
+    width: 100%;
+    max-width: 400px;
+
+    height: 36px;
+
+    margin-top: 10px;
+
+    border: 1px solid rgba(255, 255, 255, 0.14);
+
+    border-radius: 30px;
+
+    background: rgba(255, 255, 255, 0.045);
+
+    color: rgba(255, 255, 255, 0.68);
+
+    font-size: 10px;
+
+    cursor: pointer;
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.clear-chat-button.visible {
+    display: block;
+}
+
+.clear-chat-button:hover {
+    background: rgba(255, 255, 255, 0.09);
+
+    color: #ffffff;
+
+    border-color: rgba(255, 255, 255, 0.24);
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 7px 20px rgba(255, 255, 255, 0.025);
+}
+
+.clear-chat-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   RIGHT PANEL
+   ========================================= */
+
+.image-panel {
+    position: relative;
+
+    flex: 1;
+
+    min-width: 0;
+
+    width: 100%;
+    height: 100vh;
+
+    background: #080808;
+
+    overflow: hidden;
+}
+
+
+/* =========================================
+   EMPTY STATE
+/* =========================================
+   PROFESSIONAL EMPTY STATE
+   ========================================= */
+
+.empty-state {
+    position: absolute;
+
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    width: 78%;
+
+    text-align: center;
+
+    pointer-events: none;
+}
+
+
+/* =========================================
+   SMALL STATUS MARKER
+   ========================================= */
+
+.empty-state::before {
+    content: "";
+
+    display: block;
+
+    width: 6px;
+    height: 6px;
+
+    margin: 0 auto 18px;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.32);
+
+    box-shadow:
+        0 0 0 5px rgba(255, 255, 255, 0.025),
+        0 0 16px rgba(255, 255, 255, 0.08);
+}
+
+
+/* =========================================
+   TITLE
+   ========================================= */
+
+.empty-state-title {
+    margin-bottom: 10px;
+
+    color: rgba(255, 255, 255, 0.68);
+
+    font-size: 15px;
+
+    font-weight: 400;
+
+    letter-spacing: -0.2px;
+}
+
+
+/* =========================================
+   DESCRIPTION
+   ========================================= */
+
+.empty-state-text {
+    max-width: 360px;
+
+    margin: 0 auto;
+
+    color: rgba(255, 255, 255, 0.30);
+
+    font-size: 10px;
+
+    line-height: 1.7;
+
+    letter-spacing: 0.2px;
+}
+
+
+/* =========================================
+   SUBTLE FRAME
+   ========================================= */
+
+.empty-state::after {
+    content:
+        "SATELLITE IMAGERY · READY";
+
+    display: block;
+
+    margin-top: 20px;
+
+    color: rgba(255, 255, 255, 0.18);
+
+    font-size: 7px;
+
+    letter-spacing: 2px;
+}
+
+
+/* =========================================
+   MULTIPLE IMAGE GALLERY
+   ========================================= */
+
+.image-gallery {
+    position: absolute;
+
+    top: 78px;
+    left: 34px;
+    right: 34px;
+    bottom: 28px;
+
+    display: none;
+
+    gap: 12px;
+
+    padding: 10px;
+
+    border: 1px solid rgba(255, 255, 255, 0.10);
+
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, 0.008);
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    align-content: center;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        rgba(255, 255, 255, 0.18)
+        transparent;
+}
+
+.image-gallery.visible {
+    display: grid;
+}
+
+
+/* SCROLLBAR */
+
+.image-gallery::-webkit-scrollbar {
+    width: 5px;
+}
+
+.image-gallery::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.image-gallery::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14);
+
+    border-radius: 10px;
+}
+
+.image-gallery::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+
+/* =========================================
+   IMAGE CARD
+   ========================================= */
+
+.image-card {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    min-height: 180px;
+
+    overflow: hidden;
+
+    border: 1px solid rgba(255, 255, 255, 0.09);
+
+    border-radius: 8px;
+
+    background: #050505;
+}
+
+
+/* IMAGE */
+
+.image-card img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: contain;
+
+    background: #050505;
+}
+
+
+/* =========================================
+   IMAGE LABEL
+   ========================================= */
+
+.image-number {
+    position: absolute;
+
+    top: 9px;
+    left: 9px;
+
+    padding: 4px 7px;
+
+    border: 1px solid rgba(255, 255, 255, 0.13);
+
+    border-radius: 4px;
+
+    background: rgba(0, 0, 0, 0.65);
+
+    color: rgba(255, 255, 255, 0.55);
+
+    font-size: 7px;
+
+    letter-spacing: 1px;
+
+    backdrop-filter: blur(6px);
+}
+
+
+/* =========================================
+   IMAGE REMOVE BUTTON
+   ========================================= */
+
+.remove-image {
+    position: absolute;
+
+    top: 10px;
+    right: 10px;
+
+    width: 28px;
+    height: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.45);
+
+    border-radius: 50%;
+
+    background: rgba(0, 0, 0, 0.85);
+
+    color: #ffffff;
+
+    font-size: 18px;
+    font-weight: 400;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    z-index: 20;
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.6);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        border-color 0.3s ease;
+}
+
+.remove-image:hover {
+    background: rgba(255, 255, 255, 0.18);
+
+    border-color: #ffffff;
+
+    transform: translateY(-2px) scale(1.05);
+}
+
+.remove-image:active {
+    transform: translateY(0) scale(0.98);
+}
+
+
+/* =========================================
+   GALLERY LAYOUTS
+   ========================================= */
+
+.image-gallery.single {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
+.image-gallery.double {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+}
+
+.image-gallery.triple {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+.image-gallery.triple .image-card:first-child {
+    grid-column: 1 / -1;
+}
+
+.image-gallery.multi {
+    grid-template-columns:
+        repeat(auto-fit, minmax(220px, 1fr));
+
+    grid-auto-rows:
+        minmax(180px, 1fr);
+}
+
+
+/* =========================================
+   RESULT / CHAT VIEW
+   ========================================= */
+
+.result-view {
+    position: absolute;
+
+    inset: 0;
+
+    display: none;
+
+    background: #080808;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        rgba(255, 255, 255, 0.18)
+        transparent;
+}
+
+.result-view.visible {
+    display: block;
+}
+
+
+/* SCROLLBAR */
+
+.result-view::-webkit-scrollbar {
+    width: 6px;
+}
+
+.result-view::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.result-view::-webkit-scrollbar-thumb {
+    background:
+        rgba(255, 255, 255, 0.16);
+
+    border-radius: 10px;
+}
+
+.result-view::-webkit-scrollbar-thumb:hover {
+    background:
+        rgba(255, 255, 255, 0.28);
+}
+
+
+/* =========================================
+   RESULT INNER
+   ========================================= */
+
+.result-inner {
+    min-height: 100%;
+
+    padding:
+        95px 7% 45px;
+}
+
+
+/* =========================================
+   RESULT HEADER
+   ========================================= */
+
+.result-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 45px;
+}
+
+.result-label {
+    color:
+        rgba(255, 255, 255, 0.35);
+
+    font-size: 10px;
+
+    font-weight: 600;
+
+    letter-spacing: 3px;
+}
+
+.result-status {
+    padding: 6px 10px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.14);
+
+    border-radius: 4px;
+
+    color:
+        rgba(255, 255, 255, 0.45);
+
+    font-size: 8px;
+
+    letter-spacing: 1.5px;
+}
+
+
+/* =========================================
+   CHAT HISTORY
+   ========================================= */
+
+.chat-history {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 28px;
+
+    width: 100%;
+}
+
+
+/* =========================================
+   CHAT MESSAGE
+   ========================================= */
+
+.chat-message {
+    width: 100%;
+
+    padding: 22px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.10);
+
+    border-radius: 10px;
+
+    background:
+        rgba(255, 255, 255, 0.018);
+}
+
+
+/* USER */
+
+.user-message {
+    max-width: 88%;
+
+    margin-left: auto;
+
+    background:
+        rgba(255, 255, 255, 0.035);
+
+    border-color:
+        rgba(255, 255, 255, 0.14);
+}
+
+
+/* AI */
+
+.ai-message {
+    max-width: 100%;
+}
+
+
+/* LABEL */
+
+.message-label {
+    margin-bottom: 12px;
+
+    color:
+        rgba(255, 255, 255, 0.30);
+
+    font-size: 8px;
+
+    font-weight: 600;
+
+    letter-spacing: 2px;
+}
+
+
+/* USER QUESTION */
+
+.message-question {
+    color:
+        rgba(255, 255, 255, 0.86);
+
+    font-size: 15px;
+
+    line-height: 1.6;
+}
+
+
+/* ANALYSIS */
+
+.message-analysis {
+    display: inline-block;
+
+    margin-top: 14px;
+
+    padding: 5px 8px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.10);
+
+    border-radius: 4px;
+
+    color:
+        rgba(255, 255, 255, 0.36);
+
+    font-size: 8px;
+
+    letter-spacing: 1px;
+}
+
+
+/* AI TITLE */
+
+.ai-message h3 {
+    margin-bottom: 12px;
+
+    color:
+        rgba(255, 255, 255, 0.92);
+
+    font-size: 22px;
+
+    font-weight: 400;
+
+    letter-spacing: -0.5px;
+}
+
+
+/* AI TEXT */
+
+.ai-message p {
+    max-width: 800px;
+
+    color:
+        rgba(255, 255, 255, 0.48);
+
+    font-size: 13px;
+
+    line-height: 1.8;
+}
+
+
+/* =========================================
+   ASK ANOTHER QUESTION
+   ========================================= */
+
+.result-question-button {
+    display: block;
+
+    width: 220px;
+
+    height: 38px;
+
+    margin-top: 45px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.08);
+
+    border-radius: 30px;
+
+    background: rgba(255, 255, 255, 0.92);
+
+    color: #111111;
+
+    font-size: 10px;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 18px rgba(255, 255, 255, 0.025);
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.result-question-button:hover {
+    background: rgba(255, 255, 255, 0.98);
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 7px 24px rgba(255, 255, 255, 0.06);
+}
+
+.result-question-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   CLEAR CHAT RESULT
+   ========================================= */
+
+.clear-chat-result-button {
+    display: block;
+
+    width: 150px;
+
+    height: 38px;
+
+    margin-top: 12px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.14);
+
+    border-radius: 30px;
+
+    background: rgba(255, 255, 255, 0.045);
+
+    color:
+        rgba(255, 255, 255, 0.68);
+
+    font-size: 10px;
+
+    cursor: pointer;
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.clear-chat-result-button:hover {
+    background:
+        rgba(255, 255, 255, 0.09);
+
+    color: #ffffff;
+
+    border-color:
+        rgba(255, 255, 255, 0.24);
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 7px 20px rgba(255, 255, 255, 0.025);
+}
+
+.clear-chat-result-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 1000px) {
+
+    .chat-sidebar {
+        width: 190px;
+    }
+
+    .control-panel {
+        flex: 0 0 42%;
+    }
+
+}
+
+
+@media (max-width: 800px) {
+
+    body {
+        overflow: auto;
+    }
+
+    .app-main {
+        display: block;
+
+        height: auto;
+
+        min-height: 100vh;
+    }
+
+
+    .app-navbar {
+        padding: 0 6%;
+    }
+
+
+    .chat-sidebar {
+        width: 100%;
+
+        height: auto;
+
+        max-height: 220px;
+
+        padding-top: 58px;
+
+        border-right: none;
+
+        border-bottom:
+            1px solid
+            rgba(255, 255, 255, 0.08);
+    }
+
+
+    .chat-list {
+        max-height: 110px;
+    }
+
+
+    .control-panel {
+        width: 100%;
+
+        flex: none;
+
+        height: auto;
+
+        min-height: 100vh;
+
+        border-right: none;
+
+        border-bottom:
+            1px solid
+            rgba(255, 255, 255, 0.12);
+    }
+
+
+    .control-content {
+        margin:
+            100px 8% 60px;
+    }
+
+
+    .query-input,
+    .analysis-options,
+    .run-button,
+    .continue-button,
+    .clear-chat-button {
+        max-width: 100%;
+    }
+
+
+    .image-panel {
+        width: 100%;
+
+        height: 70vh;
+    }
+
+
+    .image-gallery {
+        top: 72px;
+
+        left: 15px;
+
+        right: 15px;
+
+        bottom: 15px;
+
+        padding: 8px;
+    }
+
+
+    .image-gallery.double,
+    .image-gallery.triple,
+    .image-gallery.multi {
+        grid-template-columns: 1fr;
+    }
+
+
+    .image-gallery.triple
+    .image-card:first-child {
+        grid-column: auto;
+    }
+
+
+    .result-inner {
+        padding:
+            90px 8% 40px;
+    }
+
+
+    .user-message,
+    .ai-message {
+        max-width: 100%;
+    }
+
+
+    .result-question-button,
+    .clear-chat-result-button {
+        width: 100%;
+    }
+
+}
+/* =========================================
+   SATQUERY — GLASS BUTTON OVERRIDE
+   ========================================= */
+
+/* =========================================
+   PRIMARY BUTTONS
+   ========================================= */
+
+.upload-button,
+.run-button,
+.continue-button,
+.result-question-button {
+
+    background: rgba(255, 255, 255, 0.055) !important;
+
+    color: rgba(255, 255, 255, 0.88) !important;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.20) !important;
+
+    border-radius: 30px;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        0 4px 18px rgba(0, 0, 0, 0.18);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease,
+        color 0.3s ease;
+}
+
+
+/* =========================================
+   PRIMARY HOVER
+   ========================================= */
+
+.upload-button:hover,
+.run-button:hover,
+.continue-button:hover,
+.result-question-button:hover {
+
+    transform: translateY(-2px);
+
+    background:
+        rgba(255, 255, 255, 0.095) !important;
+
+    color: #ffffff !important;
+
+    border-color:
+        rgba(255, 255, 255, 0.34) !important;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.11),
+        0 8px 26px rgba(255, 255, 255, 0.035);
+}
+
+
+/* =========================================
+   PRIMARY CLICK
+   ========================================= */
+
+.upload-button:active,
+.run-button:active,
+.continue-button:active,
+.result-question-button:active {
+
+    transform: translateY(0);
+
+    box-shadow:
+        inset 0 1px 4px rgba(0, 0, 0, 0.25);
+
+}
+
+
+/* =========================================
+   SECONDARY BUTTONS
+   ========================================= */
+
+.delete-button,
+.clear-chat-button,
+.clear-chat-result-button {
+
+    background:
+        rgba(255, 255, 255, 0.025) !important;
+
+    color:
+        rgba(255, 255, 255, 0.58) !important;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.14) !important;
+
+    border-radius: 30px;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        border-color 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+
+/* =========================================
+   SECONDARY HOVER
+   ========================================= */
+
+.delete-button:hover,
+.clear-chat-button:hover,
+.clear-chat-result-button:hover {
+
+    transform: translateY(-2px);
+
+    background:
+        rgba(255, 255, 255, 0.065) !important;
+
+    color: #ffffff !important;
+
+    border-color:
+        rgba(255, 255, 255, 0.25) !important;
+
+    box-shadow:
+        0 7px 20px rgba(255, 255, 255, 0.025);
+}
+
+
+/* =========================================
+   SECONDARY CLICK
+   ========================================= */
+
+.delete-button:active,
+.clear-chat-button:active,
+.clear-chat-result-button:active {
+
+    transform: translateY(0);
+
+}
+
+
+/* =========================================
+   NAVBAR LINKS
+   ========================================= */
+
+.app-nav a {
+
+    transition:
+        transform 0.3s ease,
+        color 0.3s ease;
+}
+
+.app-nav a:hover {
+
+    color: #ffffff;
+
+    transform: translateY(-2px);
+
+}
+
+.app-nav a:active {
+
+    transform: translateY(0);
+
+}
+
+
+/* =========================================
+   NEW CHAT BUTTON
+   ========================================= */
+
+.new-chat-button {
+
+    background:
+        rgba(255, 255, 255, 0.035) !important;
+
+    color:
+        rgba(255, 255, 255, 0.70) !important;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.16) !important;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    transition:
+        transform 0.3s ease,
+        background 0.3s ease,
+        border-color 0.3s ease,
+        color 0.3s ease;
+}
+
+.new-chat-button:hover {
+
+    transform: translateY(-2px);
+
+    background:
+        rgba(255, 255, 255, 0.075) !important;
+
+    color: #ffffff !important;
+
+    border-color:
+        rgba(255, 255, 255, 0.28) !important;
+
+}
+
+.new-chat-button:active {
+
+    transform: translateY(0);
+
+}
+/* =========================================
+   SATQUERY LOGO — BRIGHTER
+   ========================================= */
+
+.app-logo {
+    color: rgba(255, 255, 255, 0.92);
+
+    text-shadow:
+        0 0 12px rgba(255, 255, 255, 0.06);
+
+    transition:
+        transform 0.3s ease,
+        color 0.3s ease,
+        opacity 0.3s ease;
+}
+
+.app-logo:hover {
+    color: #ffffff;
+
+    opacity: 1;
+
+    transform: translateY(-2px);
+}
+
+
+/* =========================================
+   SEARCH CHAT — MATCH UI
+   ========================================= */
+
+.chat-search input {
+    background: rgba(255, 255, 255, 0.045);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.16);
+
+    color: rgba(255, 255, 255, 0.90);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+    transition:
+        background 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.chat-search input::placeholder {
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.chat-search input:hover {
+    background: rgba(255, 255, 255, 0.06);
+
+    border-color:
+        rgba(255, 255, 255, 0.22);
+}
+
+.chat-search input:focus {
+    background: rgba(255, 255, 255, 0.07);
+
+    border-color:
+        rgba(255, 255, 255, 0.32);
+
+    box-shadow:
+        0 0 18px rgba(255, 255, 255, 0.025),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+/* =========================================
+   QUESTION COMPOSER
+   ========================================= */
+
+.query-input {
+    display: block;
+
+    width: 100%;
+    max-width: 400px;
+
+    min-height: 105px;
+    height: 105px;
+
+    margin-top: 17px;
+
+    padding: 14px 14px;
+
+    border: 1px solid rgba(255, 255, 255, 0.18);
+
+    border-radius: 10px;
+
+    outline: none;
+
+    resize: vertical;
+
+    overflow-y: auto;
+
+    background: rgba(255, 255, 255, 0.035);
+
+    color: rgba(255, 255, 255, 0.90);
+
+    font-family: Arial, Helvetica, sans-serif;
+
+    font-size: 12px;
+
+    line-height: 1.55;
+
+    transition:
+        background 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.query-input::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.query-input:hover {
+    background: rgba(255, 255, 255, 0.045);
+
+    border-color:
+        rgba(255, 255, 255, 0.24);
+}
+
+.query-input:focus {
+    background: rgba(255, 255, 255, 0.05);
+
+    border-color:
+        rgba(255, 255, 255, 0.34);
+
+    box-shadow:
+        0 0 18px rgba(255, 255, 255, 0.025);
+}
+
+
+/* =========================================
+   TEXTAREA SCROLLBAR
+   ========================================= */
+
+.query-input::-webkit-scrollbar {
+    width: 5px;
+}
+
+.query-input::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.query-input::-webkit-scrollbar-thumb {
+    background:
+        rgba(255, 255, 255, 0.14);
+
+    border-radius: 10px;
+}
+
+.query-input::-webkit-scrollbar-thumb:hover {
+    background:
+        rgba(255, 255, 255, 0.25);
+}
+/* =========================================
+   QUESTION IMAGE PREVIEW
+   ========================================= */
+
+.user-message {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+
+/* Image row */
+
+.question-image-preview {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+
+/* Individual image */
+
+.question-image-wrapper {
+    width: 150px;
+    height: 100px;
+
+    border:
+        1px solid
+        rgba(255,255,255,0.16);
+
+    border-radius: 8px;
+
+    overflow: hidden;
+
+    background:
+        rgba(255,255,255,0.025);
+
+    box-shadow:
+        0 6px 20px
+        rgba(0,0,0,0.22);
+
+    transition:
+        transform .25s ease,
+        border-color .25s ease,
+        box-shadow .25s ease;
+
+    cursor: pointer;
+}
+
+
+/* Image */
+
+.question-image-wrapper img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+
+/* Hover */
+
+.question-image-wrapper:hover {
+    transform:
+        translateY(-2px);
+
+    border-color:
+        rgba(255,255,255,0.32);
+
+    box-shadow:
+        0 10px 28px
+        rgba(0,0,0,0.32);
+}
+
+
+/* Question content */
+
+.question-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+
+/* Question text */
+
+.question-content .message-question {
+    font-size: 15px;
+    line-height: 1.6;
+    color:
+        rgba(255,255,255,0.88);
+}
+
+
+/* Analysis metadata */
+
+.question-content .message-analysis {
+    color:
+        rgba(255,255,255,0.38);
+
+    font-size: 9px;
+
+    letter-spacing: 1.2px;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================
+   MULTIPLE IMAGE PREVIEW
+   ========================================= */
+
+.question-image-preview
+.question-image-wrapper {
+    flex-shrink: 0;
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 700px) {
+
+    .question-image-wrapper {
+        width: 120px;
+        height: 82px;
+    }
+
+}
