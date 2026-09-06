@@ -7,7 +7,7 @@ from typing import Union
 
 from PIL import Image, UnidentifiedImageError
 
-from .types import ImagePreparation
+from .vqa_types import ImagePreparation
 
 ImageInput = Union[str, Path, Image.Image]
 MAX_INPUT_DIMENSION = 2048

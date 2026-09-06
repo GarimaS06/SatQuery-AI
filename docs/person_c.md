@@ -159,3 +159,80 @@ The returned `CaptionResult` contains `caption`, `model_name`, `status`, `warnin
 ## Deferred work
 
 Text-guided grounding, real LoRA/QLoRA training execution, router integration, API/frontend endpoints, and paired-image support are deliberately out of scope for this milestone.
+
+## Backend selection: PERSON_C_BACKEND
+
+Person C VQA and captioning services select their inference engine from the environment variable `PERSON_C_BACKEND`:
+
+| Value | Meaning | Default? |
+|---|---|---|
+| `moondream2` | Local vikhyatk/moondream2 (fp16, ~4 GiB VRAM) | **Yes** |
+| `mock` | CPU-safe stub, no weights | — |
+| `geochat` | Local MBZUAI/geochat-7B (≥12 GiB VRAM, cloud only) | — |
+
+If the variable is unset or contains an unrecognised value, `moondream2` is used. This mirrors Person A's `ROUTER_ENABLED` pattern in `preprocessing/services/routerService.js`.
+
+```powershell
+# explicitly select mock (useful in CI)
+$env:PERSON_C_BACKEND = "mock"
+
+# switch to GeoChat on a cloud GPU
+$env:PERSON_C_BACKEND = "geochat"
+```
+
+## Moondream2 — local prototype backend
+
+### Disclaimer: Moondream2 is a vanilla general-purpose VLM
+
+**Moondream2 is NOT the remote-sensing-adapted model.** It is a general-purpose visual language model with no fine-tuning on remote-sensing imagery or VRSBench. It does not claim performance equivalent to GeoChat-7B on RSVQA/VRSBench metrics. It is used here purely as a local prototype inference backend that fits on the RTX 3050 Laptop 6 GB GPU, to demonstrate the end-to-end inference pipeline while GeoChat-7B remains reserved for the final cloud ML evaluation.
+
+**Final ML backend is GeoChat-7B**, evaluated on VRSBench with LoRA/QLoRA adaptation. Moondream2 answers are not benchmark claims.
+
+### Why Moondream2 for prototyping
+
+- Fits in ~4 GiB VRAM in fp16 — compatible with RTX 3050 Laptop 6 GB.
+- Loads via standard HuggingFace Transformers (no separate code checkout needed).
+- Provides real end-to-end inference for VQA (`image + question → answer`) and captioning (`image → caption`) immediately on local hardware.
+- Enables integration testing with Person D's router tools before cloud GPU is available.
+
+### trust_remote_code
+
+Moondream2 uses custom model code in its HuggingFace repository. Loading requires `trust_remote_code=True`. This is explicitly set in `MoondreamAdapter`. Review the model card at <https://huggingface.co/vikhyatk/moondream2> before deploying in a production environment.
+
+### Pinned revision
+
+The adapter pins `revision="2025-06-21"` (latest entry in `vikhyatk/moondream2/blob/main/versions.txt` at implementation time). Pinning prevents silent API breakage when upstream updates the repository. To upgrade: change `MOONDREAM_REVISION` in `ml/person_c/moondream_adapter.py` and verify the `answer_question` / `caption` method signatures.
+
+### Install requirements
+
+```bash
+pip install transformers>=4.36.0 accelerate einops torch Pillow huggingface_hub
+```
+
+### One-time weight download (do once, then local-only)
+
+```bash
+python -c "from huggingface_hub import snapshot_download; \
+snapshot_download('vikhyatk/moondream2', revision='2025-06-21', local_dir='weights/moondream2')"
+```
+
+This downloads ~3.9 GiB. After download, set `PERSON_C_BACKEND=moondream2` and pass `--model-path weights/moondream2`.
+
+### Real local VQA (Moondream2)
+
+```powershell
+py -3.13 -m ml.person_c.cli --backend moondream2 --model-path weights/moondream2 --image path\to\image.png --question "What land cover type is visible?"
+```
+
+### Real local captioning (Moondream2)
+
+```powershell
+py -3.13 -m ml.person_c.captioning --backend moondream2 --model-path weights/moondream2 --image path\to\image.png
+```
+
+### Device handling
+
+- CUDA detected → model loaded in fp16 on CUDA.
+- CUDA absent → CPU fallback (slower but functional, no crash).
+- Runtime OOM on CUDA → model moved to CPU automatically, inference retried once.
+- Weights not found locally → `MoondreamLoadError` with setup command, no crash.

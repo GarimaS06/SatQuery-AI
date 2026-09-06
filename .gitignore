@@ -76,3 +76,6 @@ checkpoints/ChangeFormer_LEVIR/
 
 # Generated analysis outputs
 outputs/
+
+# Local Moondream2 pretrained weights
+weights/moondream2/
