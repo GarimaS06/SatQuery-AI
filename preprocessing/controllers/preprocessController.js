@@ -139,14 +139,14 @@ async function handlePreprocess(req, res) {
       : null;
 
     const routerResult = await forwardToRouter(
+      processedMain.path,
       questionResult.question,
-      mainImageInfo,
-      secondImageInfo,
       {
         originalFormat: imageValidation.metadata.format,
         processedWidth: processedMain.width,
         processedHeight: processedMain.height,
-      }
+      },
+      processedSecond ? processedSecond.path : undefined
     );
 
     // =========================================================
