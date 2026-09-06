@@ -192,66 +192,44 @@ async function runAllTests() {
     // Verify processedImage.path exists (Change 1)
     assert(typeof data.processedImage.path === 'string' && data.processedImage.path.length > 0,
       'processedImage.path should be a non-empty string');
-
-    // --- Router Contract Assertions (Single Image) ---
-    const payload = data.router?.payload;
-    assert(payload, 'data.router.payload should exist in stub mode');
-
-    // FIX 3: request_id exists and is non-empty
-    assert(typeof payload.request_id === 'string' && payload.request_id.length > 0,
-      'payload.request_id must be a non-empty string');
-
-    // FIX 1: Main image is under "image" (NOT "processedImage")
-    assert(payload.image, 'payload.image must exist');
-    assert(payload.processedImage === undefined,
-      'payload.processedImage must NOT be used in Router payload');
-    assert(typeof payload.image.filename === 'string' && payload.image.filename.length > 0,
-      'payload.image.filename must be a non-empty string');
-    assert(payload.image.path === data.processedImage.path,
-      'payload.image.path must match processedImage.path');
-    assert(payload.image.format === 'png',
-      `payload.image.format must be "png", got ${payload.image.format}`);
     assert(data.originalImage.path === null,
-      'originalImage.path should be null for JPEG');
-    // Verify router payload structure matches Person D's contract (Change 2)
+      'originalImage.path should be null for standard JPEG');
+    // Verify router payload structure matches Person D's confirmed contract
     const payload = data.router.payload;
     assert(payload, 'router.payload should exist in stub mode');
     assert(payload.question === 'Is there vegetation in this area?', 'payload.question should match');
-    // Verify payload.image has correct structure with size_bytes
+    // Verify request_id is present and non-empty
+    assert(typeof payload.request_id === 'string' && payload.request_id.length > 0,
+      'payload.request_id must be a non-empty string');
+    // Verify payload.image has correct structure
     assert(payload.image, 'payload.image should exist');
     assert(payload.image.format === 'png', `payload.image.format should be "png", got "${payload.image.format}"`);
-    assert(typeof payload.image.path === 'string', 'payload.image.path should be a string');
-    assert(typeof payload.image.filename === 'string', 'payload.image.filename should be a string');
+    assert(payload.image.path === data.processedImage.path,
+      'payload.image.path must match processedImage.path');
+    assert(typeof payload.image.filename === 'string' && payload.image.filename.length > 0,
+      'payload.image.filename must be a non-empty string');
     assert(payload.image.width === 800, `payload.image.width should be 800, got ${payload.image.width}`);
     assert(payload.image.height === 600, `payload.image.height should be 600, got ${payload.image.height}`);
     assert(typeof payload.image.size_bytes === 'number' && payload.image.size_bytes > 0,
       `payload.image.size_bytes must be a positive number, got ${payload.image.size_bytes}`);
-      `payload.image.size_bytes should be a positive number, got ${payload.image.size_bytes}`);
-    // Verify sizeBytes is NOT in the payload (it should be mapped to size_bytes)
     assert(payload.image.sizeBytes === undefined,
-      'payload.image must use size_bytes, NOT sizeBytes');
-
-    // Single image request: image2 must be null
-    assert(payload.image2 === null,
-      `payload.image2 must be null for single-image request, got ${JSON.stringify(payload.image2)}`);
-
-    // FIX 2: Metadata must use snake_case and NOT contain camelCase
+      'payload.image must use size_bytes, not sizeBytes');
+    // Verify image2 is null for single-image request
+    assert(payload.image2 === null, `payload.image2 should be null for single image, got ${JSON.stringify(payload.image2)}`);
+    // Verify metadata uses snake_case (no camelCase)
     assert(payload.metadata, 'payload.metadata must exist');
-    assert(payload.metadata.original_format === 'jpeg',
-      `metadata.original_format should be "jpeg", got ${payload.metadata.original_format}`);
-    assert(payload.metadata.processed_width === 800,
-      `metadata.processed_width should be 800, got ${payload.metadata.processed_width}`);
-    assert(payload.metadata.processed_height === 600,
-      `metadata.processed_height should be 600, got ${payload.metadata.processed_height}`);
+    assert(typeof payload.metadata.original_format === 'string',
+      'metadata.original_format must be a string');
+    assert(typeof payload.metadata.processed_width === 'number',
+      'metadata.processed_width must be a number');
+    assert(typeof payload.metadata.processed_height === 'number',
+      'metadata.processed_height must be a number');
     assert(payload.metadata.originalFormat === undefined,
       'metadata must NOT contain camelCase originalFormat');
     assert(payload.metadata.processedWidth === undefined,
       'metadata must NOT contain camelCase processedWidth');
     assert(payload.metadata.processedHeight === undefined,
       'metadata must NOT contain camelCase processedHeight');
-      'payload.image should use size_bytes, not sizeBytes');
-    // Verify image2 is null for single-image request
-    assert(payload.image2 === null, `payload.image2 should be null for single image, got ${JSON.stringify(payload.image2)}`);
   });
 
   // ------ Test 3: Valid PNG Upload ------
@@ -273,52 +251,26 @@ async function runAllTests() {
       image: imgPath,
       question: 'Show me changes in land use.',
     });
-    assert(status === 200, `Expected status 200, got ${status}`);
-    assert(data.valid === true, `Expected valid=true`);
-    assert(data.originalImage.format === 'tiff', `Expected original format "tiff"`);
-    let data;
     try {
-      const res = await postPreprocess({
-        image: imgPath,
-        question: 'Show me changes in land use.',
-      });
-      data = res.data;
-      assert(res.status === 200, `Expected status 200, got ${res.status}`);
+      assert(status === 200, `Expected status 200, got ${status}`);
       assert(data.valid === true, `Expected valid=true`);
       assert(data.originalImage.format === 'tiff', `Expected original format "tiff"`);
 
-    // Verify processedImage.path exists and file exists on disk
-    assert(typeof data.processedImage?.path === 'string' && data.processedImage.path.length > 0,
-      'processedImage.path should be returned');
-    assert(fs.existsSync(data.processedImage.path),
-      'processed PNG must exist on disk');
       // Verify processedImage.path exists and file exists on disk
       assert(typeof data.processedImage?.path === 'string' && data.processedImage.path.length > 0,
         'processedImage.path should be returned');
       assert(fs.existsSync(data.processedImage.path),
         'processed PNG must exist on disk');
 
-    // Verify original multispectral TIFF is preserved on disk for downstream ML
-    assert(typeof data.originalImage?.path === 'string' && data.originalImage.path.length > 0,
-      'originalImage.path should be returned for TIFF');
-    assert(fs.existsSync(data.originalImage.path),
-      `Original TIFF file at "${data.originalImage.path}" must be preserved on disk for downstream ML`);
-
-    // Explicitly clean up the preserved TIFF file so the test suite leaves no files behind
-    try {
-      if (fs.existsSync(data.originalImage.path)) {
-        fs.unlinkSync(data.originalImage.path);
       // Verify original multispectral TIFF is preserved on disk for downstream ML
       assert(typeof data.originalImage?.path === 'string' && data.originalImage.path.length > 0,
         'originalImage.path should be returned for TIFF');
       assert(fs.existsSync(data.originalImage.path),
         `Original TIFF file at "${data.originalImage.path}" must be preserved on disk for downstream ML`);
     } finally {
-      // Guaranteed cleanup even if assertion fails
       if (data?.originalImage?.path && fs.existsSync(data.originalImage.path)) {
         try { fs.unlinkSync(data.originalImage.path); } catch (e) {}
       }
-    } catch (e) {}
     }
   });
 
@@ -496,32 +448,18 @@ async function runAllTests() {
 
   // ------ Test 14: Valid Upload with image + image2 (Change Detection Pair) ------
   await runTest('14. Valid upload with image + image2 (change detection pair)', async () => {
-    // Create two test images of different sizes to confirm they are processed independently
     // Create two test images: JPEG for image1, TIFF for image2
+    // Controller normalizes second image dimensions using processedMain.width/height
     const img1Path = await createTestImage('test_cd_before.jpg', 600, 400, 'jpeg');
-    const img2Path = await createTestImage('test_cd_after.png', 800, 600, 'png');
     const img2Path = await createTestImage('test_cd_after.tif', 800, 600, 'tiff');
     const { status, data } = await postPreprocess({
       image: img1Path,
       image2: img2Path,
       question: 'What changed between these two images?',
     });
-    assert(status === 200, `Expected status 200, got ${status}`);
-    assert(data.valid === true, `Expected valid=true`);
-    // Main image should be preprocessed
-    assert(data.processedImage, 'processedImage should exist');
-    assert(data.processedImage.format === 'png', `Expected main image format "png", got "${data.processedImage.format}"`);
-    assert(typeof data.processedImage.path === 'string' && data.processedImage.path.length > 0,
-      'processedImage.path should be a non-empty string');
-    let data;
+    let secondReq;
     try {
-      const res = await postPreprocess({
-        image: img1Path,
-        image2: img2Path,
-        question: 'What changed between these two images?',
-      });
-      data = res.data;
-      assert(res.status === 200, `Expected status 200, got ${res.status}`);
+      assert(status === 200, `Expected status 200, got ${status}`);
       assert(data.valid === true, `Expected valid=true`);
       // Main image should be preprocessed
       assert(data.processedImage, 'processedImage should exist');
@@ -541,137 +479,91 @@ async function runAllTests() {
       assert(data.originalImage2, 'originalImage2 should exist');
       assert(data.originalImage2.format === 'tiff', `Expected originalImage2 format "tiff", got "${data.originalImage2.format}"`);
 
-    // Second image should also be preprocessed
-    assert(data.processedImage2, 'processedImage2 should exist when image2 is uploaded');
-    assert(data.processedImage2.format === 'png', `Expected second image format "png", got "${data.processedImage2.format}"`);
-    assert(typeof data.processedImage2.path === 'string' && data.processedImage2.path.length > 0,
-      'processedImage2.path should be a non-empty string');
       // Verify TIFF image2 is preserved on disk for downstream ML
       assert(typeof data.originalImage2?.path === 'string' && data.originalImage2.path.length > 0,
         'originalImage2.path should be returned for TIFF image2');
       assert(fs.existsSync(data.originalImage2.path),
         `Original TIFF image2 at "${data.originalImage2.path}" must be preserved on disk for downstream ML`);
 
-    // Original image info for both should be present
-    assert(data.originalImage, 'originalImage should exist');
-    assert(data.originalImage2, 'originalImage2 should exist');
-    assert(data.originalImage2.format === 'png', `Expected originalImage2 format "png", got "${data.originalImage2.format}"`);
-    assert(data.originalImage2.format === 'tiff', `Expected originalImage2 format "tiff", got "${data.originalImage2.format}"`);
-
-    // Verify TIFF image2 is preserved on disk for downstream ML
-    assert(typeof data.originalImage2?.path === 'string' && data.originalImage2.path.length > 0,
-      'originalImage2.path should be returned for TIFF image2');
-    assert(fs.existsSync(data.originalImage2.path),
-      `Original TIFF image2 at "${data.originalImage2.path}" must be preserved on disk for downstream ML`);
-
-    // Router stub should confirm image2 was passed through
-    assert(data.router.forwarded === false, 'Router should still be stubbed');
-    assert(data.router.image2Included === true, 'Router stub should report image2Included=true');
-
-    // --- Router Contract Assertions (Paired Images) ---
-    const payload = data.router?.payload;
-    assert(payload, 'data.router.payload should exist in stub mode');
-
-    // FIX 3: request_id exists and is non-empty
-    assert(typeof payload.request_id === 'string' && payload.request_id.length > 0,
-      'payload.request_id must be a non-empty string');
-
-    // FIX 1: Main image is under "image" (NOT "processedImage")
-    assert(payload.image, 'payload.image must exist');
-    assert(payload.processedImage === undefined,
-      'payload.processedImage must NOT be used in Router payload');
-    assert(typeof payload.image.filename === 'string' && payload.image.filename.length > 0,
-      'payload.image.filename must be a non-empty string');
-    assert(payload.image.path === data.processedImage.path,
-      'payload.image.path must match processedImage.path');
-    assert(payload.image.format === 'png',
-      `payload.image.format must be "png", got ${payload.image.format}`);
-    assert(typeof payload.image.width === 'number' && payload.image.width > 0,
-      `payload.image.width must be a positive number, got ${payload.image.width}`);
-    assert(typeof payload.image.height === 'number' && payload.image.height > 0,
-      `payload.image.height must be a positive number, got ${payload.image.height}`);
-    assert(typeof payload.image.size_bytes === 'number' && payload.image.size_bytes > 0,
-      `payload.image.size_bytes must be a positive number, got ${payload.image.size_bytes}`);
-    assert(payload.image.sizeBytes === undefined,
-      'payload.image must use size_bytes, NOT sizeBytes');
-
-    // Image 2: must exist, NOT be null, and have its own independent metadata
-    assert(payload.image2 !== null && typeof payload.image2 === 'object',
-      'payload.image2 must be a non-null object when second image is uploaded');
-    assert(typeof payload.image2.filename === 'string' && payload.image2.filename.length > 0,
-      'payload.image2.filename must be a non-empty string');
-    assert(payload.image2.path === data.processedImage2.path,
-      'payload.image2.path must match processedImage2.path');
-    assert(payload.image2.format === 'png',
-      `payload.image2.format must be "png", got ${payload.image2.format}`);
-    assert(typeof payload.image2.width === 'number' && payload.image2.width > 0,
-      `payload.image2.width must be a positive number, got ${payload.image2.width}`);
-    assert(typeof payload.image2.height === 'number' && payload.image2.height > 0,
-      `payload.image2.height must be a positive number, got ${payload.image2.height}`);
-    assert(typeof payload.image2.size_bytes === 'number' && payload.image2.size_bytes > 0,
-      `payload.image2.size_bytes must be a positive number, got ${payload.image2.size_bytes}`);
-    assert(payload.image2.sizeBytes === undefined,
-      'payload.image2 must use size_bytes, NOT sizeBytes');
-
-    // FIX 2: Metadata must use snake_case and NOT contain camelCase
-    assert(payload.metadata, 'payload.metadata must exist');
-    assert(payload.metadata.original_format === 'jpeg',
-      `metadata.original_format should be "jpeg", got ${payload.metadata.original_format}`);
-    assert(typeof payload.metadata.processed_width === 'number',
-      'metadata.processed_width must be a number');
-    assert(typeof payload.metadata.processed_height === 'number',
-      'metadata.processed_height must be a number');
-    assert(payload.metadata.originalFormat === undefined,
-      'metadata must NOT contain camelCase originalFormat');
-    assert(payload.metadata.processedWidth === undefined,
-      'metadata must NOT contain camelCase processedWidth');
-    assert(payload.metadata.processedHeight === undefined,
-      'metadata must NOT contain camelCase processedHeight');
-
-    // Test request_id uniqueness by issuing a second request
-    const secondReq = await postPreprocess({
-      image: img1Path,
-      image2: img2Path,
-      question: 'Are there changes over time?',
-    });
-    assert(secondReq.data.router?.payload?.request_id, 'Second request_id must exist');
-    assert(secondReq.data.router.payload.request_id !== payload.request_id,
-      'request_id must be unique for separate requests');
-
-    // Explicitly clean up test-created preserved TIFF files so test suite does not leave files behind
-    try {
-      if (data.originalImage2?.path && fs.existsSync(data.originalImage2.path)) {
-        fs.unlinkSync(data.originalImage2.path);
       // Router stub should confirm image2 was passed through
       assert(data.router.forwarded === false, 'Router should still be stubbed');
       assert(data.router.image2Included === true, 'Router stub should report image2Included=true');
-      // Verify router payload for image (Change 2)
+
+      // --- Router Contract Assertions ---
       const payload = data.router.payload;
       assert(payload, 'router.payload should exist in stub mode');
       assert(payload.question === 'What changed between these two images?', 'payload.question should match');
+
+      // request_id
+      assert(typeof payload.request_id === 'string' && payload.request_id.length > 0,
+        'payload.request_id must be a non-empty string');
+      assert(payload.processedImage === undefined,
+        'payload.processedImage must NOT be used in Router payload');
+
+      // Main image assertions
       assert(payload.image, 'payload.image should exist');
-      assert(payload.image.format === 'png', 'payload.image.format should be "png"');
+      assert(payload.image.format === 'png', `payload.image.format must be "png", got "${payload.image.format}"`);
+      assert(payload.image.path === data.processedImage.path,
+        'payload.image.path must match processedImage.path');
+      assert(typeof payload.image.filename === 'string' && payload.image.filename.length > 0,
+        'payload.image.filename must be a non-empty string');
+      assert(typeof payload.image.width === 'number' && payload.image.width > 0,
+        `payload.image.width must be a positive number, got ${payload.image.width}`);
+      assert(typeof payload.image.height === 'number' && payload.image.height > 0,
+        `payload.image.height must be a positive number, got ${payload.image.height}`);
       assert(typeof payload.image.size_bytes === 'number' && payload.image.size_bytes > 0,
-        'payload.image.size_bytes should be a positive number');
+        'payload.image.size_bytes must be a positive number');
       assert(payload.image.sizeBytes === undefined,
-        'payload.image should use size_bytes, not sizeBytes');
-      // Verify router payload for image2 (Change 2)
-      assert(payload.image2, 'payload.image2 should NOT be null when image2 is uploaded');
-      assert(payload.image2.format === 'png', 'payload.image2.format should be "png"');
-      assert(typeof payload.image2.path === 'string', 'payload.image2.path should be a string');
+        'payload.image must use size_bytes, not sizeBytes');
+
+      // image2 assertions
+      assert(payload.image2 !== null && typeof payload.image2 === 'object',
+        'payload.image2 must be a non-null object when second image is uploaded');
+      assert(payload.image2.format === 'png', `payload.image2.format must be "png", got "${payload.image2.format}"`);
+      assert(payload.image2.path === data.processedImage2.path,
+        'payload.image2.path must match processedImage2.path');
+      assert(typeof payload.image2.filename === 'string' && payload.image2.filename.length > 0,
+        'payload.image2.filename must be a non-empty string');
+      assert(typeof payload.image2.width === 'number' && payload.image2.width > 0,
+        `payload.image2.width must be a positive number, got ${payload.image2.width}`);
+      assert(typeof payload.image2.height === 'number' && payload.image2.height > 0,
+        `payload.image2.height must be a positive number, got ${payload.image2.height}`);
       assert(typeof payload.image2.size_bytes === 'number' && payload.image2.size_bytes > 0,
-        'payload.image2.size_bytes should be a positive number');
+        'payload.image2.size_bytes must be a positive number');
       assert(payload.image2.sizeBytes === undefined,
-        'payload.image2 should use size_bytes, not sizeBytes');
+        'payload.image2 must use size_bytes, not sizeBytes');
+
+      // Metadata must use snake_case
+      assert(payload.metadata, 'payload.metadata must exist');
+      assert(payload.metadata.original_format === 'jpeg',
+        `metadata.original_format should be "jpeg", got ${payload.metadata.original_format}`);
+      assert(typeof payload.metadata.processed_width === 'number',
+        'metadata.processed_width must be a number');
+      assert(typeof payload.metadata.processed_height === 'number',
+        'metadata.processed_height must be a number');
+      assert(payload.metadata.originalFormat === undefined,
+        'metadata must NOT contain camelCase originalFormat');
+      assert(payload.metadata.processedWidth === undefined,
+        'metadata must NOT contain camelCase processedWidth');
+      assert(payload.metadata.processedHeight === undefined,
+        'metadata must NOT contain camelCase processedHeight');
+
+      // Verify request_id is unique across separate requests
+      secondReq = await postPreprocess({
+        image: img1Path,
+        image2: img2Path,
+        question: 'Are there changes over time?',
+      });
+      assert(secondReq.data.router?.payload?.request_id, 'Second request_id must exist');
+      assert(secondReq.data.router.payload.request_id !== payload.request_id,
+        'request_id must be unique for separate requests');
     } finally {
-      // Explicitly clean up test-created preserved TIFF file
       if (data?.originalImage2?.path && fs.existsSync(data.originalImage2.path)) {
         try { fs.unlinkSync(data.originalImage2.path); } catch (e) {}
       }
-      if (secondReq.data?.originalImage2?.path && fs.existsSync(secondReq.data.originalImage2.path)) {
-        fs.unlinkSync(secondReq.data.originalImage2.path);
+      if (secondReq?.data?.originalImage2?.path && fs.existsSync(secondReq.data.originalImage2.path)) {
+        try { fs.unlinkSync(secondReq.data.originalImage2.path); } catch (e) {}
       }
-    } catch (e) {}
     }
   });
 

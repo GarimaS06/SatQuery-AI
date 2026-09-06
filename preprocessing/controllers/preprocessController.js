@@ -145,13 +145,10 @@ async function handlePreprocess(req, res) {
     const routerResult = await forwardToRouter(
       processedMain.path,
       questionResult.question,
-      mainImageInfo,
-      secondImageInfo,
       {
         originalFormat: imageValidation.metadata.format,
         processedWidth: processedMain.width,
         processedHeight: processedMain.height,
-      }
       },
       processedSecond ? processedSecond.path : undefined
     );
@@ -160,8 +157,6 @@ async function handlePreprocess(req, res) {
     // STEP 6: Clean up the raw uploaded files
     // =========================================================
     // We keep the PROCESSED files (Person D or the frontend may need them).
-    // We delete the raw UPLOADED files (they were just temp copies).
-    filesToCleanup.forEach(deleteFile);
     // For standard formats (JPEG, PNG, WebP), we delete the raw UPLOADED files.
     // For multispectral formats (TIFF/TIF), we PRESERVE the original uploaded file
     // on disk so downstream ML specialists (NDVI, NDWI, NDBI) can read all spectral bands.
@@ -194,7 +189,6 @@ async function handlePreprocess(req, res) {
 },
       originalImage: {
         filename: mainFile.originalname,
-        path: mainFile.path,
         path: isMainTiff ? mainFile.path : null,
         format: imageValidation.metadata.format,
         width: imageValidation.metadata.width,
@@ -216,7 +210,6 @@ async function handlePreprocess(req, res) {
       };
       response.originalImage2 = {
         filename: secondFile.originalname,
-        path: secondFile.path,
         path: isSecondTiff ? secondFile.path : null,
         format: image2Validation.metadata.format,
         width: image2Validation.metadata.width,
