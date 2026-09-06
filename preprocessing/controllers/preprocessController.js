@@ -139,6 +139,7 @@ async function handlePreprocess(req, res) {
       : null;
 
     const routerResult = await forwardToRouter(
+      processedMain.path,
       questionResult.question,
       mainImageInfo,
       secondImageInfo,
@@ -147,6 +148,8 @@ async function handlePreprocess(req, res) {
         processedWidth: processedMain.width,
         processedHeight: processedMain.height,
       }
+      },
+      processedSecond ? processedSecond.path : undefined
     );
 
     // =========================================================
@@ -155,6 +158,19 @@ async function handlePreprocess(req, res) {
     // We keep the PROCESSED files (Person D or the frontend may need them).
     // We delete the raw UPLOADED files (they were just temp copies).
     filesToCleanup.forEach(deleteFile);
+    // For standard formats (JPEG, PNG, WebP), we delete the raw UPLOADED files.
+    // For multispectral formats (TIFF/TIF), we PRESERVE the original uploaded file
+    // on disk so downstream ML specialists (NDVI, NDWI, NDBI) can read all spectral bands.
+    const isMainTiff = imageValidation?.metadata?.format === 'tiff';
+    const isSecondTiff = image2Validation?.metadata?.format === 'tiff';
+
+    filesToCleanup.forEach((filePath) => {
+      const isPreservedMain = isMainTiff && filePath === mainFile.path;
+      const isPreservedSecond = isSecondTiff && filePath === secondFile?.path;
+      if (!isPreservedMain && !isPreservedSecond) {
+        deleteFile(filePath);
+      }
+    });
 
     // =========================================================
     // STEP 7: Build and send the success response
@@ -174,6 +190,8 @@ async function handlePreprocess(req, res) {
       },
       originalImage: {
         filename: mainFile.originalname,
+        path: mainFile.path,
+        path: isMainTiff ? mainFile.path : null,
         format: imageValidation.metadata.format,
         width: imageValidation.metadata.width,
         height: imageValidation.metadata.height,
@@ -194,6 +212,8 @@ async function handlePreprocess(req, res) {
       };
       response.originalImage2 = {
         filename: secondFile.originalname,
+        path: secondFile.path,
+        path: isSecondTiff ? secondFile.path : null,
         format: image2Validation.metadata.format,
         width: image2Validation.metadata.width,
         height: image2Validation.metadata.height,
