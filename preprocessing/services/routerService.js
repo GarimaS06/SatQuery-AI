@@ -30,8 +30,35 @@
  */
 
 const axios = require('axios');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
+
+/**
+ * Reads the actual processed image file from disk and constructs an ImageRef
+ * object adhering to Person D's Router contract.
+ *
+ * Each image's metadata (format, width, height, size_bytes) is read
+ * independently from disk — nothing is assumed or copied from another image.
+ *
+ * @param {string} imagePath - Absolute path to the processed image file
+ * @returns {Promise<object>} ImageRef matching Person D's schema:
+ *   { filename, path, format, width, height, size_bytes }
+ */
+async function buildImageRef(imagePath) {
+  const imageMetadata = await sharp(imagePath).metadata();
+  const stats = fs.statSync(imagePath);
+
+  return {
+    filename: path.basename(imagePath),
+    path: imagePath,
+    format: imageMetadata.format,
+    width: imageMetadata.width,
+    height: imageMetadata.height,
+    size_bytes: stats.size,
+  };
+}
 
 /**
  * Forwards the processed image(s) and question to Person D's Router.
@@ -47,55 +74,53 @@ const path = require('path');
  * @param {string} [processedImage2Path]    - Full path to the second processed PNG image (optional, for change detection)
  * @returns {Promise<object>} - Router response or stub response
  */
-async function forwardToRouter(processedImagePath, question, metadata, processedImage2Path) {
+async function forwardToRouter(processedImagePath, question, metadata = {}, processedImage2Path) {
   // Check if router integration is enabled via environment variable
   const isEnabled = process.env.ROUTER_ENABLED === 'true';
   const routerUrl =
     process.env.ROUTER_URL || 'http://localhost:8000/api/router/analyze';
 
+  // Read actual metadata independently from disk for each image
+  const image = await buildImageRef(processedImagePath);
+  const image2 = processedImage2Path
+    ? await buildImageRef(processedImage2Path)
+    : null;
+
+  // Format metadata strictly with snake_case field names (no camelCase)
+  const routerMetadata = {
+    original_format: metadata.originalFormat || metadata.original_format,
+    processed_width: metadata.processedWidth || metadata.processed_width,
+    processed_height: metadata.processedHeight || metadata.processed_height,
+  };
+
+  // Build the complete payload conforming to Person D's Router schema
+  const payload = {
+    request_id: crypto.randomUUID(),
+    question: question,
+    image: image,
+    image2: image2,
+    metadata: routerMetadata,
+  };
+
   // ----- STUB MODE (default) -----
-  // Return immediately without making any HTTP call
+  // Return immediately without making any HTTP call.
+  // Include payload in the stub response so tests and consumers can verify the structure.
   if (!isEnabled) {
     return {
       forwarded: false,
       reason:
         'Router integration is not yet enabled. Set ROUTER_ENABLED=true in .env when Person D confirms the API contract.',
       image2Included: !!processedImage2Path,
+      payload: payload,
     };
   }
 
   // ----- LIVE MODE (after Person D confirms) -----
   try {
-    // TODO: Update the request format once Person D confirms their API.
-    //
-    // Current assumption: JSON body with the processed image file path
-    // and the question. This assumes both services can access the same
-    // file system (e.g., running on the same machine during development).
-    //
-    // If Person D wants multipart/form-data instead, we would need to
-    // install the "form-data" npm package and send the file as a stream.
-    // Example:
-    //   const FormData = require('form-data');
-    //   const form = new FormData();
-    //   form.append('image', fs.createReadStream(processedImagePath));
-    //   form.append('question', question);
-    //   const response = await axios.post(routerUrl, form, {
-    //     headers: form.getHeaders(),
-    //   });
-
-    const response = await axios.post(
-      routerUrl,
-      {
-        imagePath: processedImagePath,
-        imagePath2: processedImage2Path || null, // null when no second image
-        question: question,
-        metadata: metadata,
-      },
-      {
-        timeout: 60000, // 60-second timeout (ML models can be slow)
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    const response = await axios.post(routerUrl, payload, {
+      timeout: 60000, // 60-second timeout (ML models can be slow)
+      headers: { 'Content-Type': 'application/json' },
+    });
 
     return {
       forwarded: true,

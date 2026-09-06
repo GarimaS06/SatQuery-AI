@@ -18,7 +18,7 @@ from typing import Protocol
 
 from .data.vrsbench import VRSBenchDataset, VRSBenchDatasetError, VRSBenchRecord
 from .service import PersonCVQAService
-from .types import GeoChatConfig
+from .vqa_types import GeoChatConfig
 
 OFFICIAL_VQA_TYPES = (
     "object category",

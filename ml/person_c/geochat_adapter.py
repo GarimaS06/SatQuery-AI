@@ -12,7 +12,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from .types import GeoChatConfig
+from .vqa_types import GeoChatConfig
 
 
 class GeoChatLoadError(RuntimeError):
