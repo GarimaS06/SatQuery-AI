@@ -2390,3 +2390,8 @@ body {
     }
 
 }
+/* Hide duplicate buttons from the result panel */
+#resultQuestionButton,
+#clearChatResultButton {
+    display: none !important;
+}
