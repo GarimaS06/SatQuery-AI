@@ -6,6 +6,7 @@ from .ndwi_tool import NDWITool
 from .ndbi_tool import NDBITool
 from .vqa_tool import VQATool
 from .change_detection_tool import ChangeDetectionTool
+from .changeformer_tool import ChangeFormerTool
 from .captioning_tool import CaptioningTool
 
 
@@ -15,6 +16,7 @@ def build_registry() -> ToolRegistry:
     TaskType.NDWI: NDWITool(),
     TaskType.NDBI: NDBITool(),
     TaskType.CHANGE_DETECTION: ChangeDetectionTool(),
+    TaskType.CHANGEFORMER: ChangeFormerTool(),
     TaskType.VQA: VQATool(),
     TaskType.CAPTIONING: CaptioningTool(),
 }

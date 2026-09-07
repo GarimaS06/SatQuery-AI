@@ -15,6 +15,14 @@ DIRECT_KEYWORDS = {
         "compare",
         "comparison",
     ],
+    "changeformer": [
+        "changeformer",
+        "deep change",
+        "transformer change",
+        "ai change detection",
+        "structural change",
+        "building change",
+    ],
     "vqa": [
         "what is",
         "what do you see",
