@@ -82,9 +82,18 @@ class PersonCVQAService:
             assert isinstance(config, GeoChatConfig)
             self._adapter = GeoChatAdapter(config)
         elif self._backend == "moondream2":
-            md_cfg = self._moondream_config or MoondreamConfig()
+            if self._moondream_config is not None and self._moondream_config.model_path is not None:
+                md_cfg = self._moondream_config
+                model_path = md_cfg.model_path
+            elif self._moondream_config is None:
+                env_path = os.getenv("PERSON_C_MODEL_PATH")
+                model_path = Path(env_path) if env_path else None
+                md_cfg = MoondreamConfig(model_path=model_path)
+            else:
+                md_cfg = self._moondream_config
+                model_path = md_cfg.model_path
             self._adapter = MoondreamAdapter(
-                model_path=md_cfg.model_path,
+                model_path=model_path,
                 device=md_cfg.device,
             )
         else:

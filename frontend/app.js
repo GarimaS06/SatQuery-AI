@@ -900,24 +900,90 @@ function renderImageGallery() {
                 "image-card";
 
 
-            const img =
-                document.createElement(
-                    "img"
+            const isTiff =
+                file.name.toLowerCase().endsWith(".tif") ||
+                file.name.toLowerCase().endsWith(".tiff") ||
+                file.type === "image/tiff" ||
+                file.type === "image/tif";
+
+            if (isTiff) {
+                const tiffPlaceholder =
+                    document.createElement(
+                        "div"
+                    );
+
+                tiffPlaceholder.className =
+                    "tiff-preview-placeholder";
+
+                const tiffIcon =
+                    document.createElement(
+                        "div"
+                    );
+
+                tiffIcon.className =
+                    "tiff-preview-icon";
+
+                tiffIcon.textContent =
+                    "🛰️";
+
+                const tiffFilename =
+                    document.createElement(
+                        "div"
+                    );
+
+                tiffFilename.className =
+                    "tiff-preview-filename";
+
+                tiffFilename.textContent =
+                    file.name;
+
+                const tiffStatus =
+                    document.createElement(
+                        "div"
+                    );
+
+                tiffStatus.className =
+                    "tiff-preview-status";
+
+                tiffStatus.textContent =
+                    "Multispectral image loaded";
+
+                tiffPlaceholder.appendChild(
+                    tiffIcon
                 );
 
-
-            const objectURL =
-                URL.createObjectURL(
-                    file
+                tiffPlaceholder.appendChild(
+                    tiffFilename
                 );
 
+                tiffPlaceholder.appendChild(
+                    tiffStatus
+                );
 
-            img.src =
-                objectURL;
+                card.appendChild(
+                    tiffPlaceholder
+                );
+            } else {
+                const img =
+                    document.createElement(
+                        "img"
+                    );
 
+                const objectURL =
+                    URL.createObjectURL(
+                        file
+                    );
 
-            img.alt =
-                file.name;
+                img.src =
+                    objectURL;
+
+                img.alt =
+                    file.name;
+
+                card.appendChild(
+                    img
+                );
+            }
 
 
             const number =
@@ -969,11 +1035,6 @@ function renderImageGallery() {
                     removeImage(index);
 
                 }
-            );
-
-
-            card.appendChild(
-                img
             );
 
 
@@ -2091,46 +2152,63 @@ function addQuestionMessage(
                     "question-image-wrapper";
 
 
-                const img =
-                    document.createElement(
-                        "img"
-                    );
+                const isTiff =
+                    file.name.toLowerCase().endsWith(".tif") ||
+                    file.name.toLowerCase().endsWith(".tiff") ||
+                    file.type === "image/tiff" ||
+                    file.type === "image/tif";
 
-
-                const objectURL =
-                    URL.createObjectURL(
-                        file
-                    );
-
-
-                img.src =
-                    objectURL;
-
-
-                img.alt =
-                    file.name;
-
-
-                img.title =
-                    "Click to view image";
-
-
-                img.addEventListener(
-                    "click",
-                    () => {
-
-                        window.open(
-                            objectURL,
-                            "_blank"
+                if (isTiff) {
+                    const tiffBadge =
+                        document.createElement(
+                            "div"
                         );
 
-                    }
-                );
+                    tiffBadge.className =
+                        "question-tiff-badge";
 
+                    tiffBadge.innerHTML =
+                        `<span>🛰️</span> <strong>${escapeHTML(file.name)}</strong> <span style="color:#7dd3fc; font-size:11px;">(Multispectral image loaded)</span>`;
 
-                wrapper.appendChild(
-                    img
-                );
+                    wrapper.appendChild(
+                        tiffBadge
+                    );
+                } else {
+                    const img =
+                        document.createElement(
+                            "img"
+                        );
+
+                    const objectURL =
+                        URL.createObjectURL(
+                            file
+                        );
+
+                    img.src =
+                        objectURL;
+
+                    img.alt =
+                        file.name;
+
+                    img.title =
+                        "Click to view image";
+
+                    img.addEventListener(
+                        "click",
+                        () => {
+
+                            window.open(
+                                objectURL,
+                                "_blank"
+                            );
+
+                        }
+                    );
+
+                    wrapper.appendChild(
+                        img
+                    );
+                }
 
 
                 imagePreview.appendChild(
@@ -2343,78 +2421,113 @@ function addAnswerMessage(
             ? data.tools_used
             : [];
 
+    const rawResults =
+        Array.isArray(data.results)
+            ? data.results
+            : [];
 
-    message.innerHTML = `
+    const hasChangeFormer =
+        tasks.some((t) => String(t).toLowerCase().includes("changeformer")) ||
+        tools.some((t) => String(t).toLowerCase().includes("changeformer")) ||
+        rawResults.some((r) => String(r.tool || "").toLowerCase().includes("changeformer"));
 
-        <div class="message-label">
-            SATQUERY AI
-        </div>
+    const isChangeDetectionResponse =
+        hasChangeFormer ||
+        tasks.some((t) => String(t).toLowerCase().includes("change")) ||
+        tools.some((t) => String(t).toLowerCase().includes("change")) ||
+        rawResults.some((r) => {
+            const toolStr = String(r.tool || "").toLowerCase();
+            const typeStr = String((r.output && r.output.analysis_type) || "").toLowerCase();
+            return toolStr.includes("change") || typeStr.includes("change");
+        });
 
-        <h3>
-            Analysis Result
-        </h3>
+    const displayResults = rawResults.filter((result) => {
+        const toolStr = String(result.tool || "").toLowerCase();
+        if (hasChangeFormer && toolStr === "change_detection") {
+            return false;
+        }
+        return true;
+    });
 
-        <div class="router-answer">
-            ${escapeHTML(
-                data.answer ||
-                "No answer returned by Router."
-            )}
-        </div>
+    if (isChangeDetectionResponse) {
+        message.innerHTML = `
+            <div class="message-label">
+                SATQUERY AI
+            </div>
+        `;
+    } else {
+        message.innerHTML = `
 
-        <div class="router-meta">
+            <div class="message-label">
+                SATQUERY AI
+            </div>
 
-            <span>
-                STATUS:
+            <h3>
+                Analysis Result
+            </h3>
+
+            <div class="router-answer">
                 ${escapeHTML(
-                    statusLabel
+                    formatAnswerText(data.answer) ||
+                    "No answer returned by Router."
                 )}
-            </span>
+            </div>
 
-            ${confidenceHTML}
+            <div class="router-meta">
 
-        </div>
+                <span>
+                    STATUS:
+                    ${escapeHTML(
+                        statusLabel
+                    )}
+                </span>
 
-        ${
-            tasks.length > 0
-                ? `
-                    <div class="router-detail">
+                ${confidenceHTML}
 
-                        <strong>
-                            Tasks
-                        </strong>
+            </div>
 
-                        <div>
-                            ${escapeHTML(
-                                tasks.join(", ")
-                            )}
+            ${
+                tasks.length > 0
+                    ? `
+                        <div class="router-detail">
+
+                            <strong>
+                                Tasks
+                            </strong>
+
+                            <div>
+                                ${escapeHTML(
+                                    tasks.join(", ")
+                                )}
+                            </div>
+
                         </div>
+                      `
+                    : ""
+            }
 
-                    </div>
-                  `
-                : ""
-        }
+            ${
+                tools.length > 0
+                    ? `
+                        <div class="router-detail">
 
-        ${
-            tools.length > 0
-                ? `
-                    <div class="router-detail">
+                            <strong>
+                                Tools Used
+                            </strong>
 
-                        <strong>
-                            Tools Used
-                        </strong>
+                            <div>
+                                ${escapeHTML(
+                                    tools.join(", ")
+                                )}
+                            </div>
 
-                        <div>
-                            ${escapeHTML(
-                                tools.join(", ")
-                            )}
                         </div>
+                      `
+                    : ""
+            }
 
-                    </div>
-                  `
-                : ""
-        }
-
-    `;
+        `;
+    }
 
 
     /*
@@ -2422,8 +2535,7 @@ function addAnswerMessage(
     */
 
     if (
-        Array.isArray(data.results) &&
-        data.results.length > 0
+        displayResults.length > 0
     ) {
 
         const resultsContainer =
@@ -2436,26 +2548,28 @@ function addAnswerMessage(
             "router-results";
 
 
-        const title =
-            document.createElement(
-                "div"
+        if (!isChangeDetectionResponse) {
+            const title =
+                document.createElement(
+                    "div"
+                );
+
+
+            title.className =
+                "router-detail-title";
+
+
+            title.textContent =
+                "ANALYSIS DETAILS";
+
+
+            resultsContainer.appendChild(
+                title
             );
+        }
 
 
-        title.className =
-            "router-detail-title";
-
-
-        title.textContent =
-            "ANALYSIS DETAILS";
-
-
-        resultsContainer.appendChild(
-            title
-        );
-
-
-        data.results.forEach(
+        displayResults.forEach(
             (result) => {
 
                 const resultCard =
@@ -2473,17 +2587,32 @@ function addAnswerMessage(
                     "analysis";
 
 
-                let html = `
+                let isChange = false;
+                if (result.output) {
+                    const output = result.output;
+                    const analysisType = output.analysis_type || tool;
+                    const typeStr = String(analysisType || tool || "").toLowerCase();
+                    isChange =
+                        typeStr.includes("change") ||
+                        (output.result && typeof output.result === "object" && ("changed_pixels" in output.result || "changed_percentage" in output.result));
+                } else {
+                    const toolStr = String(tool).toLowerCase();
+                    isChange = toolStr.includes("change");
+                }
 
-                    <div class="router-result-tool">
-                        ${escapeHTML(
-                            String(
-                                tool
-                            ).toUpperCase()
-                        )}
-                    </div>
+                let html = "";
 
-                `;
+                if (!isChange) {
+                    html += `
+                        <div class="router-result-tool">
+                            ${escapeHTML(
+                                String(
+                                    tool
+                                ).toUpperCase()
+                            )}
+                        </div>
+                    `;
+                }
 
 
                 if (
@@ -2499,25 +2628,27 @@ function addAnswerMessage(
                         tool;
 
 
-                    html += `
+                    if (!isChange) {
+                        html += `
 
-                        <div class="router-detail">
+                            <div class="router-detail">
 
-                            <strong>
-                                Type
-                            </strong>
+                                <strong>
+                                    Type
+                                </strong>
 
-                            <div>
-                                ${escapeHTML(
-                                    String(
-                                        analysisType
-                                    )
-                                )}
+                                <div>
+                                    ${escapeHTML(
+                                        String(
+                                            analysisType
+                                        )
+                                    )}
+                                </div>
+
                             </div>
 
-                        </div>
-
-                    `;
+                        `;
+                    }
 
 
                     if (
@@ -2526,7 +2657,11 @@ function addAnswerMessage(
 
                         html +=
                             buildResultHTML(
-                                output.result
+                                output.result,
+                                analysisType,
+                                tool,
+                                result.evidence,
+                                result.output_files
                             );
 
                     }
@@ -2535,12 +2670,53 @@ function addAnswerMessage(
 
 
                 /*
-                   OUTPUT FILES
+                   OUTPUT FILES (for non-change tools if any)
                 */
 
                 if (
-                    result.output_files
+                    result.output_files &&
+                    !isChange
                 ) {
+
+                    const outputFiles =
+                        result.output_files;
+
+                    const mapPath =
+                        typeof outputFiles === "object" && outputFiles !== null
+                            ? (outputFiles.map ||
+                               outputFiles.image ||
+                               Object.values(outputFiles).find(
+                                   (val) =>
+                                       typeof val === "string" &&
+                                       /\.(png|jpe?g|webp|gif)$/i.test(val)
+                               ))
+                            : null;
+
+                    let mapImageHTML = "";
+                    if (mapPath && typeof mapPath === "string") {
+                        const filename = mapPath.split(/[/\\]/).pop();
+                        let routerBase = "http://localhost:8000";
+                        try {
+                            routerBase = new URL(ROUTER_URL).origin;
+                        } catch (e) {
+                            // ignore
+                        }
+                        const routerFileUrl = `${routerBase}/api/router/files/${encodeURIComponent(filename)}`;
+                        const rootFileUrl = `/${mapPath.replace(/^\/+/, "")}`;
+                        mapImageHTML = `
+                            <div class="router-map-preview" style="margin-top: 10px;">
+                                <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #cbd5e1;">Change Map Visualization:</div>
+                                <img
+                                    src="${routerFileUrl}"
+                                    data-fallback-root="${escapeHTML(rootFileUrl)}"
+                                    data-fallback-rel="${escapeHTML(mapPath)}"
+                                    alt="Change Detection Map"
+                                    style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); display: block;"
+                                    onerror="if (!this.dataset.fallbackCount) { this.dataset.fallbackCount = '1'; this.src = this.dataset.fallbackRoot; } else if (this.dataset.fallbackCount === '1') { this.dataset.fallbackCount = '2'; this.src = this.dataset.fallbackRel; }"
+                                />
+                            </div>
+                        `;
+                    }
 
                     html += `
 
@@ -2557,6 +2733,7 @@ function addAnswerMessage(
                                     )
                                 )}
                             </div>
+                            ${mapImageHTML}
 
                         </div>
 
@@ -2708,11 +2885,54 @@ function addAnswerMessage(
 
 
 /* =========================================
+   SPECTRAL ANALYSIS FORMATTERS
+   ========================================= */
+
+function formatAnswerText(text) {
+    if (!text || typeof text !== "string") {
+        return text;
+    }
+    return text.replace(/(-?\d+\.\d{3,})/g, (match) => {
+        const num = Number(match);
+        return isNaN(num) ? match : num.toFixed(2);
+    });
+}
+
+function getNDVIInterpretation(mean) {
+    if (mean >= 0.5) {
+        return "Dense, healthy vegetation is present.";
+    } else if (mean >= 0.2) {
+        return "Moderate vegetation is present.";
+    } else if (mean >= 0.1) {
+        return "Sparse or low vegetation is present.";
+    } else if (mean >= 0.0) {
+        return "Very low vegetation / barren or built-up area.";
+    }
+    return "No vegetation detected (water, rock, or clouds).";
+}
+
+function getNDWIInterpretation(mean) {
+    if (mean >= 0.3) {
+        return "Open water body / high water presence detected.";
+    } else if (mean >= 0.0) {
+        return "High surface moisture or water surface present.";
+    } else if (mean >= -0.3) {
+        return "Moderate surface moisture / non-water or vegetated surfaces.";
+    }
+    return "Low water content / mostly dry or non-water surfaces.";
+}
+
+
+/* =========================================
    BUILD RESULT HTML
    ========================================= */
 
 function buildResultHTML(
-    result
+    result,
+    analysisType,
+    tool,
+    evidence,
+    outputFiles
 ) {
 
     if (
@@ -2724,10 +2944,176 @@ function buildResultHTML(
 
     }
 
+    const typeStr =
+        String(analysisType || tool || "").toLowerCase();
+
+    const isNDVI =
+        typeStr.includes("ndvi") ||
+        typeStr.includes("vegetation") ||
+        (result && typeof result === "object" && "mean_value" in result && evidence && "vegetation_percentage" in evidence);
+
+    const isNDWI =
+        typeStr.includes("ndwi") ||
+        typeStr.includes("water") ||
+        (result && typeof result === "object" && "mean_value" in result && evidence && "water_percentage" in evidence);
+
+    const isChange =
+        typeStr.includes("change") ||
+        (result && typeof result === "object" && ("changed_pixels" in result || "changed_percentage" in result));
+
+    if (isNDVI && typeof result === "object" && ("mean_value" in result)) {
+        const avg = Number(result.mean_value || 0);
+        const min = Number(result.min_value !== undefined ? result.min_value : -1);
+        const max = Number(result.max_value !== undefined ? result.max_value : 1);
+        const vegPct = evidence && evidence.vegetation_percentage !== undefined ? Number(evidence.vegetation_percentage) : null;
+        const interp = getNDVIInterpretation(avg);
+
+        return `
+            <div class="spectral-result-card ndvi">
+                <div class="spectral-card-title">
+                    <span>🌱</span> <span>Vegetation Analysis</span>
+                </div>
+                <div class="spectral-card-body">
+                    <div>Average NDVI: <strong>${avg.toFixed(2)}</strong></div>
+                    <div>Range: <strong>${min.toFixed(2)} → ${max.toFixed(2)}</strong></div>
+                    ${vegPct !== null ? `<div>Vegetation Coverage: <strong>${vegPct.toFixed(1)}%</strong></div>` : ""}
+                    <div>Interpretation: <em>${escapeHTML(interp)}</em></div>
+                    <div class="spectral-card-success">✓ Analysis completed successfully</div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (isNDWI && typeof result === "object" && ("mean_value" in result)) {
+        const avg = Number(result.mean_value || 0);
+        const min = Number(result.min_value !== undefined ? result.min_value : -1);
+        const max = Number(result.max_value !== undefined ? result.max_value : 1);
+        const waterPct = evidence && evidence.water_percentage !== undefined ? Number(evidence.water_percentage) : null;
+        const interp = getNDWIInterpretation(avg);
+
+        return `
+            <div class="spectral-result-card ndwi">
+                <div class="spectral-card-title">
+                    <span>💧</span> <span>Water Index Analysis</span>
+                </div>
+                <div class="spectral-card-body">
+                    <div>Average NDWI: <strong>${avg.toFixed(2)}</strong></div>
+                    <div>Range: <strong>${min.toFixed(2)} → ${max.toFixed(2)}</strong></div>
+                    ${waterPct !== null ? `<div>Water Coverage: <strong>${waterPct.toFixed(1)}%</strong></div>` : ""}
+                    <div>Interpretation: <em>${escapeHTML(interp)}</em></div>
+                    <div class="spectral-card-success">✓ Analysis completed successfully</div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (isChange && typeof result === "object") {
+        const changedPx =
+            result.changed_pixels !== undefined
+                ? Number(result.changed_pixels)
+                : (result.changedPixels !== undefined ? Number(result.changedPixels) : null);
+        const totalPx =
+            result.total_pixels !== undefined
+                ? Number(result.total_pixels)
+                : (result.totalPixels !== undefined ? Number(result.totalPixels) : null);
+
+        let changedPct = null;
+        if (result.changed_percentage !== undefined && result.changed_percentage !== null) {
+            changedPct = Number(result.changed_percentage);
+        } else if (result.change_percentage !== undefined && result.change_percentage !== null) {
+            changedPct = Number(result.change_percentage);
+        } else if (result.percentage !== undefined && result.percentage !== null) {
+            changedPct = Number(result.percentage);
+        } else if (changedPx !== null && totalPx !== null && totalPx > 0) {
+            changedPct = (changedPx / totalPx) * 100;
+        }
+
+        const isChangeFormer =
+            typeStr.includes("changeformer") ||
+            (tool && String(tool).toLowerCase().includes("changeformer")) ||
+            (outputFiles && typeof outputFiles.map === "string" && outputFiles.map.toLowerCase().includes("changeformer")) ||
+            (result.model && String(result.model).toLowerCase().includes("changeformer"));
+
+        const statusText = isChangeFormer
+            ? "✓ ChangeFormer analysis completed"
+            : "✓ Analysis completed successfully";
+
+        let mapImageHTML = "";
+        const effectiveFiles =
+            typeof outputFiles === "object" && outputFiles !== null
+                ? outputFiles
+                : (typeof result === "object" && result !== null && typeof result.output_files === "object"
+                    ? result.output_files
+                    : (typeof result === "object" && result !== null && result.output && typeof result.output.output_files === "object"
+                        ? result.output.output_files
+                        : {}));
+
+        const mapPath =
+            effectiveFiles.map ||
+            effectiveFiles.image ||
+            Object.values(effectiveFiles).find(
+                (val) =>
+                    typeof val === "string" &&
+                    /\.(png|jpe?g|webp|gif)$/i.test(val)
+            ) || null;
+
+        if (mapPath && typeof mapPath === "string") {
+            const filename = mapPath.split(/[/\\]/).pop();
+            let routerBase = "http://localhost:8000";
+            try {
+                routerBase = new URL(ROUTER_URL).origin;
+            } catch (e) {
+                // ignore
+            }
+            const cleanPath = mapPath.replace(/^\/+/, "");
+            const routerFileUrl = `${routerBase}/api/router/files/${encodeURIComponent(filename)}`;
+            const fallbackUrls = [
+                `${routerBase}/api/router/files/${cleanPath}`,
+                `${routerBase}/${cleanPath}`,
+                `${routerBase}/outputs/${encodeURIComponent(filename)}`,
+                `/${cleanPath}`,
+                mapPath
+            ];
+            mapImageHTML = `
+                <div class="router-map-preview" style="margin-top: 10px;">
+                    <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #cbd5e1;">Change Map Visualization:</div>
+                    <img
+                        src="${routerFileUrl}"
+                        data-fallbacks='${JSON.stringify(fallbackUrls)}'
+                        data-fallback-idx="0"
+                        alt="Change Detection Map"
+                        style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); display: block;"
+                        onerror="try { const urls = JSON.parse(this.dataset.fallbacks || '[]'); const idx = parseInt(this.dataset.fallbackIdx || '0', 10); if (idx < urls.length) { this.dataset.fallbackIdx = String(idx + 1); this.src = urls[idx]; } else { this.style.display = 'none'; } } catch(e) { this.style.display = 'none'; }"
+                    />
+                </div>
+            `;
+        }
+
+        return `
+            <div class="spectral-result-card change">
+                <div class="spectral-card-title">
+                    <span>🔍</span> <span>Change Detection</span>
+                </div>
+                <div class="spectral-card-body">
+                    <div>Changed Pixels: <strong>${changedPx !== null && !isNaN(changedPx) ? changedPx.toLocaleString() : "N/A"}</strong></div>
+                    <div>Total Pixels: <strong>${totalPx !== null && !isNaN(totalPx) ? totalPx.toLocaleString() : "N/A"}</strong></div>
+                    <div>Changed Area: <strong>${changedPct !== null && !isNaN(changedPct) ? changedPct.toFixed(2) + "%" : "N/A"}</strong></div>
+                    <div class="spectral-card-success">${escapeHTML(statusText)}</div>
+                </div>
+            </div>
+            ${mapImageHTML}
+        `;
+    }
+
 
     if (
         typeof result !== "object"
     ) {
+
+        let displayStr = String(result);
+        if (typeof result === "number" && !Number.isInteger(result)) {
+            displayStr = result.toFixed(2);
+        }
 
         return `
 
@@ -2739,9 +3125,7 @@ function buildResultHTML(
 
                 <div>
                     ${escapeHTML(
-                        String(
-                            result
-                        )
+                        displayStr
                     )}
                 </div>
 
@@ -2765,7 +3149,18 @@ function buildResultHTML(
 
 
             if (
-                typeof value === "object"
+                typeof value === "number" &&
+                !Number.isInteger(value)
+            ) {
+
+                displayValue =
+                    value.toFixed(2);
+
+            }
+
+            else if (
+                typeof value === "object" &&
+                value !== null
             ) {
 
                 displayValue =
@@ -2944,9 +3339,25 @@ function askAnotherQuestion() {
     }
 
 
+    /*
+       CLEAR PREVIOUS QUESTION INPUT
+    */
+
+    if (queryInput) {
+
+        queryInput.value =
+            "";
+
+    }
+
+
+    /*
+       RESET RESULT VIEW & SHOW UPLOADED IMAGES
+    */
+
     if (resultView) {
 
-        resultView.classList.add(
+        resultView.classList.remove(
             "visible"
         );
 
@@ -2955,7 +3366,21 @@ function askAnotherQuestion() {
 
     if (imageGallery) {
 
-        imageGallery.classList.remove(
+        imageGallery.classList.add(
+            "visible"
+        );
+
+    }
+
+
+    setResultStatus(
+        "READY"
+    );
+
+
+    if (continueButton) {
+
+        continueButton.classList.remove(
             "visible"
         );
 
@@ -2969,12 +3394,16 @@ function askAnotherQuestion() {
                 selectedFiles.length > 1
                     ? "s"
                     : ""
-            } retained — ask another question.`;
+            } loaded — enter a new question below.`;
 
     }
 
 
-    queryInput.focus();
+    if (queryInput) {
+
+        queryInput.focus();
+
+    }
 
 }
 

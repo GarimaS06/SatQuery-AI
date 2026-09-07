@@ -271,6 +271,33 @@ class TestCaptioningBackendRouting(unittest.TestCase):
         self.assertEqual(svc._backend, "moondream2")
         self.assertIsInstance(svc._adapter, MoondreamAdapter)
 
+    def test_vqa_uses_person_c_model_path_env_var(self):
+        from ml.person_c.service import PersonCVQAService
+        fake_path = "/fake/weights/moondream2"
+        with patch.dict(os.environ, {"PERSON_C_BACKEND": "moondream2", "PERSON_C_MODEL_PATH": fake_path}):
+            svc = PersonCVQAService()
+            self.assertEqual(svc._backend, "moondream2")
+            self.assertIsInstance(svc._adapter, MoondreamAdapter)
+            self.assertEqual(svc._adapter.model_path, Path(fake_path))
+
+    def test_captioning_uses_person_c_model_path_env_var(self):
+        from ml.person_c.captioning import PersonCCaptioningService
+        fake_path = "/fake/weights/moondream2"
+        with patch.dict(os.environ, {"PERSON_C_BACKEND": "moondream2", "PERSON_C_MODEL_PATH": fake_path}):
+            svc = PersonCCaptioningService()
+            self.assertEqual(svc._backend, "moondream2")
+            self.assertIsInstance(svc._adapter, MoondreamAdapter)
+            self.assertEqual(svc._adapter.model_path, Path(fake_path))
+
+    def test_vqa_prefers_explicit_config_over_env_var(self):
+        from ml.person_c.service import PersonCVQAService
+        fake_env_path = "/fake/env/weights"
+        explicit_path = Path("/explicit/weights")
+        with patch.dict(os.environ, {"PERSON_C_BACKEND": "moondream2", "PERSON_C_MODEL_PATH": fake_env_path}):
+            cfg = MoondreamConfig(model_path=explicit_path)
+            svc = PersonCVQAService(config=cfg)
+            self.assertEqual(svc._adapter.model_path, explicit_path)
+
 
 if __name__ == "__main__":
     unittest.main()

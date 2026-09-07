@@ -9,11 +9,16 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from person_b.output_schema import AnalysisResult
 
-CHANGEFORMER_ROOT = os.path.abspath("ChangeFormer")
-if CHANGEFORMER_ROOT not in sys.path:
-    sys.path.insert(0, CHANGEFORMER_ROOT)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+CHANGEFORMER_ROOT = Path(os.environ.get("CHANGEFORMER_ROOT", PROJECT_ROOT / "ChangeFormer")).resolve()
+if str(CHANGEFORMER_ROOT) not in sys.path:
+    sys.path.insert(0, str(CHANGEFORMER_ROOT))
 
-from models.ChangeFormer import ChangeFormerV6
+import models
+try:
+    from models.ChangeFormer import ChangeFormerV6
+except Exception:
+    ChangeFormerV6 = None
 
 Path("outputs").mkdir(exist_ok=True)
 
@@ -55,6 +60,9 @@ def run_changeformer(
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # 4. Load model
+        global ChangeFormerV6
+        if ChangeFormerV6 is None:
+            from models.ChangeFormer import ChangeFormerV6
         model = ChangeFormerV6(embed_dim=256)
         ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
         model.load_state_dict(ckpt["model_G_state_dict"])
