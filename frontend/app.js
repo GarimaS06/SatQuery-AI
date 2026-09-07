@@ -5,6 +5,50 @@
 
 
 /* =========================================
+   PAGE LOADER
+   Hide the spinner carried over from the
+   landing page, once this page has actually
+   painted — with a short minimum display
+   time so it never just flickers.
+   ========================================= */
+
+(function hidePageLoader() {
+
+    const pageLoader =
+        document.getElementById(
+            "pageLoader"
+        );
+
+
+    if (!pageLoader) {
+
+        return;
+
+    }
+
+
+    const minimumDisplayMs = 550;
+
+
+    window.addEventListener(
+        "load",
+        () => {
+
+            setTimeout(() => {
+
+                pageLoader.classList.add(
+                    "hidden"
+                );
+
+            }, minimumDisplayMs);
+
+        }
+    );
+
+})();
+
+
+/* =========================================
    API CONFIGURATION
    ========================================= */
 

@@ -317,3 +317,152 @@ if (satelliteContainer) {
 
     parallaxSatellite();
 }
+
+
+/* =========================================
+   PAGE TRANSITION — LANDING TO APP
+   A subtle scale on the page itself, plus a
+   small centered spinner — no fade, no blur,
+   nothing going dark. The landing page never
+   gets an entrance effect; this only plays
+   on the way OUT, toward app.html.
+   ========================================= */
+
+const launchButtons =
+    document.querySelectorAll(
+        ".launch-button"
+    );
+
+
+function createPageLoader() {
+
+    const loader =
+        document.createElement("div");
+
+    loader.className =
+        "page-loader";
+
+    loader.id =
+        "pageLoader";
+
+
+    loader.innerHTML = `
+        <div class="skeleton-shell">
+
+            <div class="skeleton-sidebar">
+                <div class="skeleton-bar skeleton-title" style="width:60px;"></div>
+                <div class="skeleton-sidebar-item"><div class="skeleton-bar" style="width:90%;"></div></div>
+                <div class="skeleton-sidebar-item"><div class="skeleton-bar" style="width:70%;"></div></div>
+                <div class="skeleton-sidebar-item"><div class="skeleton-bar" style="width:80%;"></div></div>
+                <div class="skeleton-sidebar-item"><div class="skeleton-bar" style="width:55%;"></div></div>
+            </div>
+
+            <div class="skeleton-control">
+                <div class="skeleton-bar skeleton-label" style="width:140px;"></div>
+                <div class="skeleton-bar skeleton-heading" style="width:80%;"></div>
+                <div class="skeleton-bar skeleton-heading" style="width:60%;"></div>
+                <div class="skeleton-bar" style="width:95%; margin-top:16px;"></div>
+                <div class="skeleton-bar" style="width:75%;"></div>
+
+                <div class="skeleton-button"></div>
+                <div class="skeleton-button skeleton-button--ghost"></div>
+                <div class="skeleton-textarea"></div>
+                <div class="skeleton-button skeleton-button--primary"></div>
+            </div>
+
+            <div class="skeleton-image-panel"></div>
+
+        </div>
+    `;
+
+
+    document.body.appendChild(loader);
+
+
+    return loader;
+
+}
+
+
+const pageLoader =
+    createPageLoader();
+
+
+launchButtons.forEach((button) => {
+
+    button.addEventListener(
+        "click",
+        (event) => {
+
+            event.preventDefault();
+
+
+            const destination =
+                button.dataset.href ||
+                "./app.html";
+
+
+            /*
+               Respect reduced-motion —
+               just navigate immediately.
+            */
+
+            const prefersReducedMotion =
+                window.matchMedia(
+                    "(prefers-reduced-motion: reduce)"
+                ).matches;
+
+
+            if (prefersReducedMotion) {
+
+                window.location.href =
+                    destination;
+
+                return;
+
+            }
+
+
+            document.body.classList.add(
+                "page-exit"
+            );
+
+
+            /*
+               Show the spinner a beat after
+               the scale starts, so it reads
+               as "settling into loading"
+               rather than popping in.
+            */
+
+            setTimeout(() => {
+
+                pageLoader.classList.add(
+                    "active"
+                );
+
+            }, 220);
+
+
+            setTimeout(() => {
+
+                window.location.href =
+                    destination;
+
+            }, 750);
+
+        }
+    );
+
+});
+/* =========================================
+   RESTORE PAGE AFTER BROWSER BACK
+   ========================================= */
+
+window.addEventListener("pageshow", () => {
+    document.body.classList.remove("page-exit");
+
+    if (pageLoader) {
+        pageLoader.classList.remove("active");
+    }
+});

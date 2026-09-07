@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-3
+
 <head>
 
     <meta charset="UTF-8">
@@ -23,7 +23,50 @@
 
 
 <body>
--
+
+    <!-- =========================================
+         PAGE LOADER
+         Carried over visually from the landing
+         page's transition — hidden by app.js
+         shortly after load.
+         ========================================= -->
+
+    <div
+        class="page-loader active"
+        id="pageLoader"
+    >
+
+        <div class="skeleton-shell">
+
+            <!-- SIDEBAR SKELETON -->
+            <div class="skeleton-sidebar">
+                <div class="skeleton-bar skeleton-title" style="width:60px;"></div>
+                <div class="skeleton-sidebar-item"><div class="skeleton-bar" style="width:90%;"></div></div>
+                <div class="skeleton-sidebar-item"><div class="skeleton-bar" style="width:70%;"></div></div>
+                <div class="skeleton-sidebar-item"><div class="skeleton-bar" style="width:80%;"></div></div>
+                <div class="skeleton-sidebar-item"><div class="skeleton-bar" style="width:55%;"></div></div>
+            </div>
+
+            <!-- CONTROL PANEL SKELETON -->
+            <div class="skeleton-control">
+                <div class="skeleton-bar skeleton-label" style="width:140px;"></div>
+                <div class="skeleton-bar skeleton-heading" style="width:80%;"></div>
+                <div class="skeleton-bar skeleton-heading" style="width:60%;"></div>
+                <div class="skeleton-bar" style="width:95%; margin-top:16px;"></div>
+                <div class="skeleton-bar" style="width:75%;"></div>
+
+                <div class="skeleton-button"></div>
+                <div class="skeleton-button skeleton-button--ghost"></div>
+                <div class="skeleton-textarea"></div>
+                <div class="skeleton-button skeleton-button--primary"></div>
+            </div>
+
+            <!-- IMAGE PANEL SKELETON -->
+            <div class="skeleton-image-panel"></div>
+
+        </div>
+
+    </div>
 
     <!-- =========================================
          NAVBAR
