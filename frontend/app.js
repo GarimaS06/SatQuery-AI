@@ -1730,13 +1730,6 @@ async function runAnalysis() {
     );
 
 
-    if (imageGallery) {
-
-        imageGallery.classList.remove(
-            "visible"
-        );
-
-    }
 
 
     if (resultView) {
@@ -1775,21 +1768,14 @@ async function runAnalysis() {
     scrollChatToBottom();
 
 
-    await saveChat();
+  
 
 
     try {
+    await saveChat();
 
-        /*
-           REAL:
-           PREPROCESS → ROUTER
-        */
-
-        const routerResponse =
-            await callRouter(
-                query
-            );
-
+    const routerResponse =
+        await callRouter(query);
 
         /*
            STORE RESPONSE
@@ -3047,11 +3033,11 @@ async function clearConversation() {
 
     if (imageGallery) {
 
-        imageGallery.classList.remove(
-            "visible"
-        );
+    imageGallery.classList.add(
+        "visible"
+    );
 
-    }
+}
 
 
     imageSession.textContent =
@@ -3535,7 +3521,7 @@ async function openChat(
         );
 
 
-        imageGallery.classList.remove(
+        imageGallery.classList.add(
             "visible"
         );
 
