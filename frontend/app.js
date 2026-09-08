@@ -2727,10 +2727,29 @@ function addAnswerMessage(
                    (r.output && r.output.result && typeof r.output.result === "object" && "mean_value" in r.output.result && r.evidence && "water_percentage" in r.evidence);
         });
 
+    const isVQAResponse =
+        tasks.some((t) => {
+            const s = String(t).toLowerCase();
+            return s.includes("vqa") || s.includes("caption") || s.includes("question");
+        }) ||
+        tools.some((t) => {
+            const s = String(t).toLowerCase();
+            return s.includes("vqa") || s.includes("caption");
+        }) ||
+        rawResults.some((r) => {
+            const toolStr = String(r.tool || "").toLowerCase();
+            const typeStr = String((r.output && r.output.analysis_type) || "").toLowerCase();
+            return toolStr.includes("vqa") || typeStr.includes("vqa") ||
+                   toolStr.includes("caption") || typeStr.includes("caption") ||
+                   Boolean(r.output && r.output.answer);
+        }) ||
+        String(data.intent || "").toLowerCase().includes("question");
+
     const isCleanCardResponse =
         isChangeDetectionResponse ||
         hasNDVI ||
-        hasNDWI;
+        hasNDWI ||
+        isVQAResponse;
 
     const displayResults = rawResults.filter((result) => {
         const toolStr = String(result.tool || "").toLowerCase();
@@ -2902,7 +2921,15 @@ function addAnswerMessage(
                     typeStr.includes("change") ||
                     (output.result && typeof output.result === "object" && ("changed_pixels" in output.result || "changed_percentage" in output.result));
 
-                const isCleanCard = isNDVI || isNDWI || isChange;
+                const isVQA =
+                    typeStr.includes("vqa") ||
+                    typeStr.includes("caption") ||
+                    typeStr.includes("question") ||
+                    tool.toLowerCase().includes("vqa") ||
+                    tool.toLowerCase().includes("caption") ||
+                    Boolean(output && output.answer);
+
+                const isCleanCard = isNDVI || isNDWI || isChange || isVQA;
 
                 let html = "";
 
@@ -2947,7 +2974,8 @@ function addAnswerMessage(
 
 
                     if (
-                        output.result
+                        output.result &&
+                        !isVQA
                     ) {
 
                         html +=
@@ -2961,6 +2989,48 @@ function addAnswerMessage(
 
                     }
 
+                    if (isVQA) {
+                        const vqaAnswer =
+                            (output && output.answer) ||
+                            data.answer ||
+                            "No answer returned.";
+
+                        let cardStatusLabel = statusLabel;
+                        if (result.success === false) {
+                            cardStatusLabel = "FAILED";
+                        } else if (output && output.status === "mock") {
+                            cardStatusLabel = "MOCK";
+                        }
+
+                        const cardConfidence =
+                            result.confidence !== null && result.confidence !== undefined
+                                ? result.confidence
+                                : data.confidence;
+
+                        const isCaption =
+                            typeStr.includes("caption") ||
+                            tool.toLowerCase().includes("caption");
+
+                        html += buildVQACardHTML(
+                            vqaAnswer,
+                            cardStatusLabel,
+                            cardConfidence,
+                            result.warnings,
+                            result.error,
+                            isCaption
+                        );
+                    }
+
+                } else if (isVQA) {
+                    const vqaAnswer = data.answer || "No answer returned.";
+                    html += buildVQACardHTML(
+                        vqaAnswer,
+                        statusLabel,
+                        data.confidence,
+                        result.warnings,
+                        result.error,
+                        false
+                    );
                 }
 
 
@@ -3077,7 +3147,8 @@ function addAnswerMessage(
                 */
 
                 if (
-                    result.error
+                    result.error &&
+                    !isVQA
                 ) {
 
                     html += `
@@ -3124,6 +3195,39 @@ function addAnswerMessage(
             resultsContainer
         );
 
+    } else if (isVQAResponse && (data.answer || data.status)) {
+        const resultsContainer =
+            document.createElement(
+                "div"
+            );
+
+        resultsContainer.className =
+            "router-results";
+
+        const resultCard =
+            document.createElement(
+                "div"
+            );
+
+        resultCard.className =
+            "router-result-card";
+
+        resultCard.innerHTML = buildVQACardHTML(
+            data.answer || "No answer returned.",
+            statusLabel,
+            data.confidence,
+            [],
+            null,
+            false
+        );
+
+        resultsContainer.appendChild(
+            resultCard
+        );
+
+        message.appendChild(
+            resultsContainer
+        );
     }
 
 
@@ -3216,6 +3320,94 @@ function getNDWIInterpretation(mean) {
         return "Moderate surface moisture / non-water or vegetated surfaces.";
     }
     return "Low water content / mostly dry or non-water surfaces.";
+}
+
+
+/* =========================================
+   BUILD VQA CARD HTML
+   ========================================= */
+
+function buildVQACardHTML(
+    answer,
+    statusLabel,
+    confidence,
+    warnings,
+    error,
+    isCaption
+) {
+    let statusStyle =
+        "background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3);";
+    const normStatus = String(statusLabel || "").toUpperCase();
+    if (normStatus === "FAILED" || normStatus === "ERROR") {
+        statusStyle =
+            "background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);";
+    } else if (normStatus === "PARTIAL") {
+        statusStyle =
+            "background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3);";
+    } else if (normStatus === "MOCK") {
+        statusStyle =
+            "background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);";
+    }
+
+    let confidenceBadgeHTML = "";
+    if (confidence !== null && confidence !== undefined) {
+        const confNum = Number(confidence);
+        if (!isNaN(confNum)) {
+            const confVal = confNum <= 1 ? confNum * 100 : confNum;
+            confidenceBadgeHTML = `
+                <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                    CONFIDENCE: ${escapeHTML(confVal.toFixed(1))}%
+                </span>
+            `;
+        }
+    }
+
+    let warningsHTML = "";
+    if (Array.isArray(warnings) && warnings.length > 0) {
+        warningsHTML = `
+            <div style="margin-top: 12px; font-size: 12.5px; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                <span>⚠️</span> <span>${escapeHTML(warnings.join(", "))}</span>
+            </div>
+        `;
+    }
+
+    let errorHTML = "";
+    if (error) {
+        errorHTML = `
+            <div style="margin-top: 12px; font-size: 13px; color: #f87171; display: flex; align-items: center; gap: 6px;">
+                <span>❌</span> <span>${escapeHTML(String(error))}</span>
+            </div>
+        `;
+    }
+
+    const titleText = isCaption
+        ? "Image Captioning"
+        : "Visual Question Answering";
+    const answerText =
+        answer !== null && answer !== undefined && String(answer).trim() !== ""
+            ? String(answer)
+            : "No answer returned.";
+
+    return `
+        <div class="spectral-result-card vqa" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.25);">
+            <div class="spectral-card-title" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; color: #38bdf8;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>💬</span> <span>${escapeHTML(titleText)}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 9999px; ${statusStyle}">
+                        STATUS: ${escapeHTML(statusLabel || "SUCCESS")}
+                    </span>
+                    ${confidenceBadgeHTML}
+                </div>
+            </div>
+            <div class="spectral-card-body" style="font-size: 14.5px; line-height: 1.65; color: #f1f5f9; white-space: pre-wrap; word-break: break-word;">
+                ${escapeHTML(answerText)}
+            </div>
+            ${warningsHTML}
+            ${errorHTML}
+        </div>
+    `;
 }
 
 
