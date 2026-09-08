@@ -830,6 +830,172 @@ if (imageInput) {
 
 
 /* =========================================
+   TIFF PREVIEW GENERATOR (UI ONLY)
+   Decodes uncompressed 8/16/32-bit TIFF to canvas PNG data URL
+   Does NOT alter the original file sent to backend
+   ========================================= */
+
+const tiffPreviewCache = new WeakMap();
+
+async function getTiffPreviewURL(file) {
+    if (!file) return null;
+    if (file._previewUrl) return file._previewUrl;
+    if (tiffPreviewCache.has(file)) return tiffPreviewCache.get(file);
+
+    try {
+        const buffer = await file.arrayBuffer();
+        const dataUrl = renderTiffBufferToDataURL(buffer);
+        if (dataUrl) {
+            file._previewUrl = dataUrl;
+            tiffPreviewCache.set(file, dataUrl);
+            return dataUrl;
+        }
+    } catch (err) {
+        console.warn("Could not generate TIFF preview:", err);
+    }
+    return null;
+}
+
+function renderTiffBufferToDataURL(buffer) {
+    if (!buffer || buffer.byteLength < 8) return null;
+    const view = new DataView(buffer);
+    const byteOrder = view.getUint16(0);
+    let isLE;
+    if (byteOrder === 0x4949) isLE = true;
+    else if (byteOrder === 0x4D4D) isLE = false;
+    else return null;
+
+    if (view.getUint16(2, isLE) !== 42) return null;
+
+    const ifdOffset = view.getUint32(4, isLE);
+    if (ifdOffset >= buffer.byteLength) return null;
+
+    const numEntries = view.getUint16(ifdOffset, isLE);
+    const tags = {};
+    for (let i = 0; i < numEntries; i++) {
+        const o = ifdOffset + 2 + i * 12;
+        if (o + 12 > buffer.byteLength) break;
+        const tag = view.getUint16(o, isLE);
+        const type = view.getUint16(o + 2, isLE);
+        const count = view.getUint32(o + 4, isLE);
+        const valOffset = (count === 1 && (type === 1 || type === 3 || type === 4)) ? (o + 8) : view.getUint32(o + 8, isLE);
+        tags[tag] = { type, count, valOffset };
+    }
+
+    const readVal = (tag, defaultVal = 0) => {
+        if (!tags[tag]) return defaultVal;
+        const { type, count, valOffset } = tags[tag];
+        if (type === 3) return view.getUint16(valOffset, isLE);
+        if (type === 4) return view.getUint32(valOffset, isLE);
+        if (type === 1) return view.getUint8(valOffset);
+        return valOffset;
+    };
+
+    const width = readVal(256);
+    const height = readVal(257);
+    if (!width || !height || width > 10000 || height > 10000) return null;
+
+    const samples = readVal(277, 1);
+    const bps = readVal(258, 8);
+    const format = readVal(339, 1);
+    const compression = readVal(259, 1);
+    const rowsPerStrip = readVal(278, height);
+
+    if (compression !== 1) return null;
+
+    const stripOffsetsTag = tags[273];
+    if (!stripOffsetsTag) return null;
+    const stripCount = stripOffsetsTag.count;
+    const stripOffsets = [];
+    for (let i = 0; i < stripCount; i++) {
+        const o = stripOffsetsTag.type === 4
+            ? view.getUint32(stripOffsetsTag.valOffset + i * 4, isLE)
+            : view.getUint16(stripOffsetsTag.valOffset + i * 2, isLE);
+        stripOffsets.push(o);
+    }
+
+    const totalPixels = width * height;
+    const rVals = new Float32Array(totalPixels);
+    const gVals = new Float32Array(totalPixels);
+    const bVals = new Float32Array(totalPixels);
+
+    let minV = Infinity;
+    let maxV = -Infinity;
+    let pixelIdx = 0;
+    const bytesPerSample = Math.max(1, Math.floor(bps / 8));
+
+    for (let stripIdx = 0; stripIdx < stripCount; stripIdx++) {
+        const offset = stripOffsets[stripIdx];
+        const rowsInThisStrip = Math.min(rowsPerStrip, height - stripIdx * rowsPerStrip);
+        const pixelsInStrip = rowsInThisStrip * width;
+
+        for (let p = 0; p < pixelsInStrip && pixelIdx < totalPixels; p++) {
+            const getSample = (sIdx) => {
+                const byteOff = offset + (p * samples + sIdx) * bytesPerSample;
+                if (byteOff + bytesPerSample > buffer.byteLength) return 0;
+                if (bps === 32) return view.getFloat32(byteOff, isLE);
+                if (bps === 16) return format === 2 ? view.getInt16(byteOff, isLE) : view.getUint16(byteOff, isLE);
+                return view.getUint8(byteOff);
+            };
+
+            let r, g, b;
+            if (samples >= 3) {
+                const rIdx = samples >= 5 ? 2 : 0;
+                const gIdx = 1;
+                const bIdx = samples >= 5 ? 0 : 2;
+                r = getSample(rIdx);
+                g = getSample(gIdx);
+                b = getSample(bIdx);
+            } else {
+                r = g = b = getSample(0);
+            }
+
+            rVals[pixelIdx] = r;
+            gVals[pixelIdx] = g;
+            bVals[pixelIdx] = b;
+
+            if (!isNaN(r) && isFinite(r)) {
+                if (r < minV) minV = r;
+                if (r > maxV) maxV = r;
+            }
+            if (!isNaN(g) && isFinite(g)) {
+                if (g < minV) minV = g;
+                if (g > maxV) maxV = g;
+            }
+            if (!isNaN(b) && isFinite(b)) {
+                if (b < minV) minV = b;
+                if (b > maxV) maxV = b;
+            }
+            pixelIdx++;
+        }
+    }
+
+    let range = maxV - minV;
+    if (range <= 0 || !isFinite(range)) range = 1;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    const imgData = ctx.createImageData(width, height);
+    for (let i = 0; i < totalPixels; i++) {
+        const rNorm = Math.min(255, Math.max(0, Math.round(((rVals[i] - minV) / range) * 255)));
+        const gNorm = Math.min(255, Math.max(0, Math.round(((gVals[i] - minV) / range) * 255)));
+        const bNorm = Math.min(255, Math.max(0, Math.round(((bVals[i] - minV) / range) * 255)));
+        const idx4 = i * 4;
+        imgData.data[idx4] = rNorm;
+        imgData.data[idx4 + 1] = gNorm;
+        imgData.data[idx4 + 2] = bNorm;
+        imgData.data[idx4 + 3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return canvas.toDataURL("image/png");
+}
+
+
+/* =========================================
    RENDER IMAGE GALLERY
    ========================================= */
 
@@ -907,6 +1073,17 @@ function renderImageGallery() {
                 file.type === "image/tif";
 
             if (isTiff) {
+                const img =
+                    document.createElement(
+                        "img"
+                    );
+
+                img.alt =
+                    file.name;
+
+                img.style.display =
+                    "none";
+
                 const tiffPlaceholder =
                     document.createElement(
                         "div"
@@ -946,7 +1123,7 @@ function renderImageGallery() {
                     "tiff-preview-status";
 
                 tiffStatus.textContent =
-                    "Multispectral image loaded";
+                    "Generating preview...";
 
                 tiffPlaceholder.appendChild(
                     tiffIcon
@@ -960,9 +1137,46 @@ function renderImageGallery() {
                     tiffStatus
                 );
 
+                const tiffBadge =
+                    document.createElement(
+                        "div"
+                    );
+
+                tiffBadge.style.cssText =
+                    "position:absolute; top:10px; left:10px; background:rgba(15,23,42,0.85); color:#7dd3fc; font-size:11px; font-weight:600; padding:4px 8px; border-radius:4px; border:1px solid rgba(125,211,252,0.35); z-index:2; pointer-events:none; display:none;";
+
+                tiffBadge.textContent =
+                    "Multispectral TIFF • Preview";
+
+                card.style.position =
+                    "relative";
+
                 card.appendChild(
                     tiffPlaceholder
                 );
+
+                card.appendChild(
+                    img
+                );
+
+                card.appendChild(
+                    tiffBadge
+                );
+
+                getTiffPreviewURL(file).then(
+                    (previewUrl) => {
+                        if (previewUrl) {
+                            img.src = previewUrl;
+                            img.style.display = "block";
+                            tiffBadge.style.display = "block";
+                            tiffPlaceholder.style.display = "none";
+                        } else {
+                            tiffStatus.textContent = "Multispectral TIFF • Preview unavailable";
+                        }
+                    }
+                ).catch(() => {
+                    tiffStatus.textContent = "Multispectral TIFF • Preview unavailable";
+                });
             } else {
                 const img =
                     document.createElement(
@@ -2159,6 +2373,28 @@ function addQuestionMessage(
                     file.type === "image/tif";
 
                 if (isTiff) {
+                    const previewWrapper =
+                        document.createElement(
+                            "div"
+                        );
+
+                    previewWrapper.style.cssText =
+                        "display:inline-flex; flex-direction:column; align-items:flex-start; gap:6px; margin-top:6px;";
+
+                    const img =
+                        document.createElement(
+                            "img"
+                        );
+
+                    img.alt =
+                        file.name;
+
+                    img.title =
+                        "Click to view TIFF preview";
+
+                    img.style.cssText =
+                        "max-width:160px; max-height:160px; border-radius:6px; object-fit:cover; display:none; cursor:pointer; border:1px solid rgba(125,211,252,0.3);";
+
                     const tiffBadge =
                         document.createElement(
                             "div"
@@ -2168,11 +2404,37 @@ function addQuestionMessage(
                         "question-tiff-badge";
 
                     tiffBadge.innerHTML =
-                        `<span>🛰️</span> <strong>${escapeHTML(file.name)}</strong> <span style="color:#7dd3fc; font-size:11px;">(Multispectral image loaded)</span>`;
+                        `<span>🛰️</span> <strong>${escapeHTML(file.name)}</strong> <span style="color:#7dd3fc; font-size:11px;">(Multispectral TIFF • Preview)</span>`;
 
-                    wrapper.appendChild(
+                    previewWrapper.appendChild(
+                        img
+                    );
+
+                    previewWrapper.appendChild(
                         tiffBadge
                     );
+
+                    wrapper.appendChild(
+                        previewWrapper
+                    );
+
+                    getTiffPreviewURL(file).then(
+                        (previewUrl) => {
+                            if (previewUrl) {
+                                img.src = previewUrl;
+                                img.style.display = "block";
+                                img.addEventListener(
+                                    "click",
+                                    () => {
+                                        window.open(
+                                            previewUrl,
+                                            "_blank"
+                                        );
+                                    }
+                                );
+                            }
+                        }
+                    ).catch(() => {});
                 } else {
                     const img =
                         document.createElement(
@@ -2429,7 +2691,11 @@ function addAnswerMessage(
     const hasChangeFormer =
         tasks.some((t) => String(t).toLowerCase().includes("changeformer")) ||
         tools.some((t) => String(t).toLowerCase().includes("changeformer")) ||
-        rawResults.some((r) => String(r.tool || "").toLowerCase().includes("changeformer"));
+        rawResults.some((r) => {
+            const toolStr = String(r.tool || "").toLowerCase();
+            const typeStr = String((r.output && r.output.analysis_type) || "").toLowerCase();
+            return toolStr.includes("changeformer") || typeStr.includes("changeformer");
+        });
 
     const isChangeDetectionResponse =
         hasChangeFormer ||
@@ -2441,15 +2707,41 @@ function addAnswerMessage(
             return toolStr.includes("change") || typeStr.includes("change");
         });
 
+    const hasNDVI =
+        tasks.some((t) => String(t).toLowerCase().includes("ndvi") || String(t).toLowerCase().includes("vegetation")) ||
+        tools.some((t) => String(t).toLowerCase().includes("ndvi") || String(t).toLowerCase().includes("vegetation")) ||
+        rawResults.some((r) => {
+            const toolStr = String(r.tool || "").toLowerCase();
+            const typeStr = String((r.output && r.output.analysis_type) || "").toLowerCase();
+            return toolStr.includes("ndvi") || typeStr.includes("ndvi") || toolStr.includes("vegetation") || typeStr.includes("vegetation") ||
+                   (r.output && r.output.result && typeof r.output.result === "object" && "mean_value" in r.output.result && r.evidence && "vegetation_percentage" in r.evidence);
+        });
+
+    const hasNDWI =
+        tasks.some((t) => String(t).toLowerCase().includes("ndwi") || String(t).toLowerCase().includes("water")) ||
+        tools.some((t) => String(t).toLowerCase().includes("ndwi") || String(t).toLowerCase().includes("water")) ||
+        rawResults.some((r) => {
+            const toolStr = String(r.tool || "").toLowerCase();
+            const typeStr = String((r.output && r.output.analysis_type) || "").toLowerCase();
+            return toolStr.includes("ndwi") || typeStr.includes("ndwi") || toolStr.includes("water") || typeStr.includes("water") ||
+                   (r.output && r.output.result && typeof r.output.result === "object" && "mean_value" in r.output.result && r.evidence && "water_percentage" in r.evidence);
+        });
+
+    const isCleanCardResponse =
+        isChangeDetectionResponse ||
+        hasNDVI ||
+        hasNDWI;
+
     const displayResults = rawResults.filter((result) => {
         const toolStr = String(result.tool || "").toLowerCase();
-        if (hasChangeFormer && toolStr === "change_detection") {
+        const typeStr = String((result.output && result.output.analysis_type) || "").toLowerCase();
+        if (hasChangeFormer && (toolStr === "change_detection" || typeStr === "change_detection")) {
             return false;
         }
         return true;
     });
 
-    if (isChangeDetectionResponse) {
+    if (isCleanCardResponse) {
         message.innerHTML = `
             <div class="message-label">
                 SATQUERY AI
@@ -2548,7 +2840,7 @@ function addAnswerMessage(
             "router-results";
 
 
-        if (!isChangeDetectionResponse) {
+        if (!isCleanCardResponse) {
             const title =
                 document.createElement(
                     "div"
@@ -2586,23 +2878,35 @@ function addAnswerMessage(
                     result.tool ||
                     "analysis";
 
+                const output =
+                    result.output || {};
 
-                let isChange = false;
-                if (result.output) {
-                    const output = result.output;
-                    const analysisType = output.analysis_type || tool;
-                    const typeStr = String(analysisType || tool || "").toLowerCase();
-                    isChange =
-                        typeStr.includes("change") ||
-                        (output.result && typeof output.result === "object" && ("changed_pixels" in output.result || "changed_percentage" in output.result));
-                } else {
-                    const toolStr = String(tool).toLowerCase();
-                    isChange = toolStr.includes("change");
-                }
+                const analysisType =
+                    output.analysis_type ||
+                    tool;
+
+                const typeStr =
+                    String(analysisType || tool || "").toLowerCase();
+
+                const isNDVI =
+                    typeStr.includes("ndvi") ||
+                    typeStr.includes("vegetation") ||
+                    (output.result && typeof output.result === "object" && "mean_value" in output.result && result.evidence && "vegetation_percentage" in result.evidence);
+
+                const isNDWI =
+                    typeStr.includes("ndwi") ||
+                    typeStr.includes("water") ||
+                    (output.result && typeof output.result === "object" && "mean_value" in output.result && result.evidence && "water_percentage" in result.evidence);
+
+                const isChange =
+                    typeStr.includes("change") ||
+                    (output.result && typeof output.result === "object" && ("changed_pixels" in output.result || "changed_percentage" in output.result));
+
+                const isCleanCard = isNDVI || isNDWI || isChange;
 
                 let html = "";
 
-                if (!isChange) {
+                if (!isCleanCard) {
                     html += `
                         <div class="router-result-tool">
                             ${escapeHTML(
@@ -2619,16 +2923,7 @@ function addAnswerMessage(
                     result.output
                 ) {
 
-                    const output =
-                        result.output;
-
-
-                    const analysisType =
-                        output.analysis_type ||
-                        tool;
-
-
-                    if (!isChange) {
+                    if (!isCleanCard) {
                         html += `
 
                             <div class="router-detail">
@@ -2670,12 +2965,12 @@ function addAnswerMessage(
 
 
                 /*
-                   OUTPUT FILES (for non-change tools if any)
+                   OUTPUT FILES (for non-clean-card tools if any)
                 */
 
                 if (
                     result.output_files &&
-                    !isChange
+                    !isCleanCard
                 ) {
 
                     const outputFiles =
@@ -2750,7 +3045,8 @@ function addAnswerMessage(
                     Array.isArray(
                         result.warnings
                     ) &&
-                    result.warnings.length > 0
+                    result.warnings.length > 0 &&
+                    !isCleanCard
                 ) {
 
                     html += `
@@ -3038,57 +3334,6 @@ function buildResultHTML(
             ? "✓ ChangeFormer analysis completed"
             : "✓ Analysis completed successfully";
 
-        let mapImageHTML = "";
-        const effectiveFiles =
-            typeof outputFiles === "object" && outputFiles !== null
-                ? outputFiles
-                : (typeof result === "object" && result !== null && typeof result.output_files === "object"
-                    ? result.output_files
-                    : (typeof result === "object" && result !== null && result.output && typeof result.output.output_files === "object"
-                        ? result.output.output_files
-                        : {}));
-
-        const mapPath =
-            effectiveFiles.map ||
-            effectiveFiles.image ||
-            Object.values(effectiveFiles).find(
-                (val) =>
-                    typeof val === "string" &&
-                    /\.(png|jpe?g|webp|gif)$/i.test(val)
-            ) || null;
-
-        if (mapPath && typeof mapPath === "string") {
-            const filename = mapPath.split(/[/\\]/).pop();
-            let routerBase = "http://localhost:8000";
-            try {
-                routerBase = new URL(ROUTER_URL).origin;
-            } catch (e) {
-                // ignore
-            }
-            const cleanPath = mapPath.replace(/^\/+/, "");
-            const routerFileUrl = `${routerBase}/api/router/files/${encodeURIComponent(filename)}`;
-            const fallbackUrls = [
-                `${routerBase}/api/router/files/${cleanPath}`,
-                `${routerBase}/${cleanPath}`,
-                `${routerBase}/outputs/${encodeURIComponent(filename)}`,
-                `/${cleanPath}`,
-                mapPath
-            ];
-            mapImageHTML = `
-                <div class="router-map-preview" style="margin-top: 10px;">
-                    <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #cbd5e1;">Change Map Visualization:</div>
-                    <img
-                        src="${routerFileUrl}"
-                        data-fallbacks='${JSON.stringify(fallbackUrls)}'
-                        data-fallback-idx="0"
-                        alt="Change Detection Map"
-                        style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); display: block;"
-                        onerror="try { const urls = JSON.parse(this.dataset.fallbacks || '[]'); const idx = parseInt(this.dataset.fallbackIdx || '0', 10); if (idx < urls.length) { this.dataset.fallbackIdx = String(idx + 1); this.src = urls[idx]; } else { this.style.display = 'none'; } } catch(e) { this.style.display = 'none'; }"
-                    />
-                </div>
-            `;
-        }
-
         return `
             <div class="spectral-result-card change">
                 <div class="spectral-card-title">
@@ -3101,7 +3346,6 @@ function buildResultHTML(
                     <div class="spectral-card-success">${escapeHTML(statusText)}</div>
                 </div>
             </div>
-            ${mapImageHTML}
         `;
     }
 
